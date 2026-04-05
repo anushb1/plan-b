@@ -6,46 +6,95 @@
   <title>Complete an action — Camera Intent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #eeebe3;
-      --bg-dark: #0a0a0c;
-      --surface: #16161a;
-      --text: #f4f4f5;
-      --text-dark: #18181b;
-      --muted: #71717a;
+      --bg-dark: #000000;
+      --surface: #1c1b1f;
+      --text: #e6e1e5;
+      --text-dark: #1c1b1f;
+      --muted: #cac4d0;
       --accent: #ed4335;
       --accent-hover: #d63b2e;
       --pill: rgba(255, 255, 255, 0.12);
-      --card-tint: #efd3d0;
+      --md-primary: #a8c7fa;
+      --md-on-primary: #062e6f;
       --radius: 16px;
-      --modal-blue: #007aff;
-      --modal-blue-press: #0066dd;
+      --modal-blue: #0b57d0;
+      --modal-blue-press: #0842a0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: "DM Sans", system-ui, sans-serif;
-      background: var(--bg-dark);
+      font-family: "Google Sans Flex", "Roboto", system-ui, sans-serif;
+      background: #121214;
       color: var(--text);
       min-height: 100dvh;
+      overflow: auto;
+    }
+
+    /* Pixel-style device chrome (~19.5 : 9) */
+    .device-stage {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+      background: radial-gradient(ellipse 80% 60% at 50% 20%, #2a2a2e 0%, #121214 55%, #0a0a0b 100%);
+    }
+
+    .device-frame {
+      filter: drop-shadow(0 28px 56px rgba(0, 0, 0, 0.55));
+    }
+
+    .device-bezel {
+      padding: 10px;
+      border-radius: 46px;
+      background: linear-gradient(145deg, #151516 0%, #050505 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .device-screen {
+      position: relative;
+      width: min(360px, calc(100vw - 48px), calc(min(88dvh, 820px) * 9 / 19.5));
+      aspect-ratio: 9 / 19.5;
+      max-height: min(88dvh, 820px);
+      height: auto;
+      border-radius: 36px;
       overflow: hidden;
+      background: #0d0d0f;
+      isolation: isolate;
+    }
+
+    .hole-punch {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #000;
+      z-index: 25;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      pointer-events: none;
     }
 
     .app {
-      position: relative;
+      position: absolute;
+      inset: 0;
       width: 100%;
-      max-width: 420px;
-      margin: 0 auto;
-      min-height: 100dvh;
+      height: 100%;
       background: #000;
     }
 
     video {
       width: 100%;
-      height: 100dvh;
+      height: 100%;
       object-fit: cover;
       display: block;
     }
@@ -56,15 +105,464 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 45%);
+      background: linear-gradient(
+        to top,
+        #000 0%,
+        rgba(0, 0, 0, 0.92) 28%,
+        rgba(0, 0, 0, 0.45) 48%,
+        transparent 62%
+      );
     }
+
+    /* Pixel-style “Examine text” shooting hint */
+    .pixel-text-hint {
+      position: absolute;
+      top: 88px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 16;
+      display: none;
+      align-items: center;
+      opacity: 0;
+      gap: 10px;
+      padding: 8px 16px 8px 12px;
+      border-radius: 999px;
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(20, 20, 22, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      max-width: calc(100% - 32px);
+    }
+
+    .pixel-text-hint.is-visible {
+      display: inline-flex;
+      opacity: 1;
+      animation: hint-pop-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    @keyframes hint-pop-in {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    .pixel-text-hint:active {
+      transform: translateX(-50%) scale(0.97);
+    }
+
+    .pixel-text-hint__ico {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.85);
+      transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .pixel-text-hint__ico svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .pixel-text-hint__ico.is-armed {
+      background: rgba(255, 235, 150, 0.28);
+      color: #fff8dc;
+      box-shadow: 0 0 0 1px rgba(255, 224, 130, 0.45);
+    }
+
+    .pixel-text-hint.is-examining {
+      background: rgba(255, 248, 210, 0.88);
+      color: rgba(28, 22, 8, 0.95);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 0 0 1px rgba(255, 200, 80, 0.55);
+    }
+
+    .pixel-text-hint.is-examining .pixel-text-hint__ico {
+      background: rgba(255, 220, 120, 0.55);
+      color: rgba(40, 30, 5, 0.92);
+      box-shadow: 0 0 0 1px rgba(220, 160, 40, 0.4);
+    }
+
+    .pixel-text-hint__label {
+      white-space: nowrap;
+    }
+
+    /* Highlighted text regions (normalized 0–1000 → %) */
+    .text-region-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .text-region-box {
+      position: absolute;
+      border: 2px solid rgba(255, 230, 130, 0.92);
+      border-radius: 4px;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.35),
+        0 0 20px rgba(255, 220, 100, 0.25);
+      background: rgba(255, 235, 150, 0.06);
+      animation: region-fade-in 0.45s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes region-fade-in {
+      to { opacity: 1; }
+    }
+
+    /* Tap-away scrim: leaves shutter + mode strip tappable (capture still dismisses bubbles in JS) */
+    .suggest-dismiss-scrim {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 288px;
+      z-index: 11;
+      background: transparent;
+      display: none;
+      cursor: default;
+    }
+
+    .suggest-dismiss-scrim.is-on {
+      display: block;
+      pointer-events: auto;
+    }
+
+    /* Floating quick suggestions (Pixel-style minimal pills) */
+    .quick-suggest-layer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 248px;
+      z-index: 13;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .quick-suggest-layer.is-visible {
+      pointer-events: auto;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .quick-suggest-pill {
+      appearance: none;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(32, 32, 36, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .quick-suggest-pill:active {
+      transform: scale(0.96);
+    }
+
+    .quick-suggest-pill:nth-child(1) { transition-delay: 0.02s; }
+    .quick-suggest-pill:nth-child(2) { transition-delay: 0.07s; }
+    .quick-suggest-pill:nth-child(3) { transition-delay: 0.12s; }
+
+    .quick-suggest-layer:not(.is-visible) .quick-suggest-pill {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .quick-suggest-layer.is-visible .quick-suggest-pill {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pixel-text-hint.is-visible,
+      .text-region-box,
+      .quick-suggest-layer,
+      .quick-suggest-pill {
+        animation: none !important;
+        transition: opacity 0.15s ease !important;
+      }
+      .quick-suggest-layer:not(.is-visible) .quick-suggest-pill,
+      .quick-suggest-layer.is-visible .quick-suggest-pill {
+        transform: none;
+      }
+    }
+
+    /* Pixel top status: 12 MP (left) · AI + Help (right) */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 36px 12px 8px;
+      pointer-events: none;
+    }
+
+    .top-mp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px 7px 9px;
+      border-radius: 11px;
+      background: rgba(0, 0, 0, 0.42);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .top-mp-badge__cam {
+      width: 15px;
+      height: 15px;
+      opacity: 0.95;
+      flex-shrink: 0;
+    }
+
+    .top-bar-trailing {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .top-round-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.38);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .top-round-btn:active {
+      transform: scale(0.94);
+    }
+
+    .top-round-btn.is-active {
+      background: rgba(255, 255, 255, 0.16);
+      color: #e8f4ff;
+    }
+
+    /* Rule-of-thirds grid on viewfinder */
+    .viewfinder-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 62%;
+      z-index: 4;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .viewfinder-grid.is-visible {
+      opacity: 1;
+    }
+
+    .viewfinder-grid svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Bottom chrome: settings · Photo/Video · adjustments */
+    .camera-bottom-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+      z-index: 14;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px 0;
+      pointer-events: none;
+    }
+
+    .camera-bottom-bar > * {
+      pointer-events: auto;
+    }
+
+    .btn-settings-circle,
+    .btn-adjust-squircle {
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .btn-settings-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(48, 48, 52, 0.95);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-adjust-squircle {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(48, 48, 52, 0.95);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-settings-circle:active,
+    .btn-adjust-squircle:active {
+      transform: scale(0.94);
+    }
+
+    .photo-video-toggle {
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(38, 38, 42, 0.95);
+      gap: 0;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .pvt-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.45);
+      width: 44px;
+      height: 36px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .pvt-btn.active {
+      background: rgba(165, 185, 205, 0.38);
+      color: #fff;
+    }
+
+    .nav-gesture-bar {
+      position: absolute;
+      bottom: max(6px, env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 34%;
+      max-width: 140px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.32);
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    .capture-flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 11;
+      transition: opacity 0.08s ease-out;
+    }
+
+    .capture-flash.trigger { opacity: 0.35; transition: none; }
+
+    .analyzing-badge {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9;
+      background: rgba(28, 27, 31, 0.82);
+      color: #e6e1e5;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
+    .analyzing-badge.show { display: inline-flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-top-color: var(--md-primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Intent pills — lower third, above mode strip (mockup reference) */
     .intent-wrap {
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 168px;
+      bottom: 234px;
       z-index: 6;
       display: flex;
       flex-direction: column;
@@ -96,6 +594,11 @@
       line-height: 1.35;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       max-width: 340px;
+      max-height: 3.2em;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
 
     .intent-hint.hidden {
@@ -146,44 +649,139 @@
       font-size: 13px;
       padding: 10px 14px;
       background: rgba(255, 255, 255, 0.92);
+      color: #0a0a0a;
+    }
+
+    /* Pixel mock: primary chip light, secondary chip dark glass */
+    .intent-pill.dark {
+      background: rgba(30, 30, 35, 0.72);
+      color: #f4f4f5;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(12px);
+    }
+
+    .intent-pill.dark .ico { opacity: 0.95; }
+
+    .camera-modes-wrap {
+      position: absolute;
+      bottom: max(78px, calc(env(safe-area-inset-bottom, 0px) + 66px));
+      left: 0;
+      right: 0;
+      z-index: 8;
+      pointer-events: auto;
+      mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
     }
 
     .camera-modes {
-      position: absolute;
-      bottom: 112px;
-      left: 0;
-      right: 0;
       display: flex;
-      justify-content: center;
-      gap: 20px;
-      font-size: 13px;
-      color: rgba(255,255,255,0.45);
-      pointer-events: none;
-      z-index: 8;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0;
+      padding: 6px 0 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
     }
 
-    .camera-modes span.active { color: var(--text); font-weight: 600; }
+    .camera-modes::-webkit-scrollbar { display: none; }
+
+    .camera-modes .mode-item {
+      appearance: none;
+      flex-shrink: 0;
+      scroll-snap-align: center;
+      white-space: nowrap;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: rgba(255, 255, 255, 0.38);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 10px 14px;
+      margin: 0 2px;
+      border-radius: 999px;
+      transition:
+        color 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+        font-weight 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .camera-modes .mode-item:hover {
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .camera-modes .mode-item.active {
+      color: #fff;
+      font-weight: 600;
+      transform: none;
+      background: rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    @keyframes mode-select-pulse {
+      0% {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      }
+      50% {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      100% {
+        background: rgba(255, 255, 255, 0.22);
+      }
+    }
+
+    .camera-modes .mode-item.active.mode-just-selected {
+      animation: mode-select-pulse 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .camera-modes {
+        scroll-behavior: auto;
+      }
+      .camera-modes .mode-item {
+        transition: color 0.15s ease;
+      }
+      .camera-modes .mode-item.active {
+        transform: none;
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .camera-modes .mode-item.active.mode-just-selected {
+        animation: none;
+      }
+    }
 
     .shutter-row {
       position: absolute;
-      bottom: max(28px, env(safe-area-inset-bottom));
+      bottom: max(138px, calc(env(safe-area-inset-bottom, 0px) + 122px));
       left: 0;
       right: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 48px;
-      padding-bottom: 8px;
+      padding-bottom: 0;
       pointer-events: auto;
       z-index: 10;
     }
 
     .thumb {
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
       background: var(--surface);
-      border: 2px solid rgba(255,255,255,0.2);
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
     }
 
     .shutter {
@@ -206,15 +804,21 @@
       background: #fff;
     }
 
+    .shutter:disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
     .flip {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.12);
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: rgba(48, 48, 52, 0.95);
       border: none;
       color: var(--text);
       font-size: 20px;
       cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     /* Modal — centered card (Create event mockup) */
@@ -438,11 +1042,37 @@
     .modal-actions {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 20px;
+      justify-content: space-between;
+      gap: 12px;
       padding: 12px 16px max(14px, env(safe-area-inset-bottom));
       border-top: 1px solid #f2f2f7;
       flex-shrink: 0;
+    }
+
+    .modal-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .modal-actions .more-inline {
+      margin: 0;
+      border: none;
+      background: transparent;
+    }
+
+    .modal-actions .more-inline summary {
+      padding: 8px 0;
+      font-size: 15px;
+      color: var(--modal-blue);
+    }
+
+    .modal[data-mode="share"] .modal-actions .more-inline,
+    .modal[data-mode="gdoc"] .modal-actions .more-inline,
+    .modal[data-mode="todolist"] .modal-actions .more-inline,
+    .modal[data-mode="note"] .modal-actions .more-inline {
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .btn-text-cancel {
@@ -504,6 +1134,14 @@
     .modal[data-mode="share"] #blockTodo,
     .modal[data-mode="share"] #blockNote {
       display: none !important;
+    }
+
+    .modal[data-mode="share"] #btnMoreFooter,
+    .modal[data-mode="gdoc"] #btnMoreFooter,
+    .modal[data-mode="todolist"] #btnMoreFooter,
+    .modal[data-mode="note"] #btnMoreFooter {
+      visibility: hidden;
+      pointer-events: none;
     }
 
     #shareBlock {
@@ -599,48 +1237,215 @@
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     .toast a {
-      color: #93c5fd;
+      color: var(--md-primary);
       font-weight: 600;
       text-decoration: none;
       white-space: nowrap;
     }
 
+    /* Settings sheet */
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 150;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .settings-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .settings-sheet {
+      width: 100%;
+      max-width: 420px;
+      background: #2b2930;
+      color: #e6e1e5;
+      border-radius: 24px 24px 0 0;
+      padding: 20px 20px max(24px, env(safe-area-inset-bottom));
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .settings-backdrop.open .settings-sheet {
+      transform: translateY(0);
+    }
+
+    .settings-sheet h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .settings-sheet p {
+      font-size: 13px;
+      color: #cac4d0;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .settings-sheet label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cac4d0;
+      margin-bottom: 6px;
+    }
+
+    .settings-sheet input[type="password"],
+    .settings-sheet input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #49454f;
+      background: #1c1b1f;
+      color: #e6e1e5;
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 14px;
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .settings-row button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 999px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .btn-sheet-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e6e1e5;
+    }
+
+    .btn-sheet-primary {
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+    }
+
   </style>
 </head>
 <body>
-  <div class="app" id="app">
+  <div class="device-stage">
+    <div class="device-frame">
+      <div class="device-bezel">
+        <div class="device-screen">
+          <div class="hole-punch" aria-hidden="true"></div>
+          <div class="app" id="app">
     <video id="video" playsinline autoplay muted></video>
     <canvas id="canvas"></canvas>
+    <div class="capture-flash" id="captureFlash" aria-hidden="true"></div>
     <div class="overlay"></div>
+
+    <div class="viewfinder-grid is-visible" id="viewfinderGrid" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line x1="33.333" y1="0" x2="33.333" y2="100" stroke="rgba(255,255,255,0.42)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+        <line x1="66.667" y1="0" x2="66.667" y2="100" stroke="rgba(255,255,255,0.42)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+        <line x1="0" y1="33.333" x2="100" y2="33.333" stroke="rgba(255,255,255,0.42)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+        <line x1="0" y1="66.667" x2="100" y2="66.667" stroke="rgba(255,255,255,0.42)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+    <header class="top-bar">
+      <div class="top-mp-badge">
+        <svg class="top-mp-badge__cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="3.5"/>
+        </svg>
+        <span>12 MP</span>
+      </div>
+      <div class="top-bar-trailing">
+        <button type="button" class="top-round-btn" id="btnAiScene" aria-label="AI scene and face enhancements" title="AI enhancements">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+            <circle cx="12" cy="13" r="3"/>
+            <path d="M18.5 4.5l1 2M20.5 3.5l-2 1M19 2v3" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button type="button" class="top-round-btn" id="btnHelp" aria-label="Help" title="Help">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4M12 17h.01"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="analyzing-badge" id="analyzingBadge" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="analyzingText">Analyzing…</span>
+    </div>
+
+    <button type="button" class="pixel-text-hint" id="textHintBar" aria-label="Examine text in view" aria-hidden="true">
+      <span class="pixel-text-hint__ico" id="textHintIcon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7V4h3M4 17v3h3M20 7V4h-3M20 17v3h-3"/>
+          <path d="M7 8.5h10M7 12h8M7 15.5h6"/>
+        </svg>
+      </span>
+      <span class="pixel-text-hint__label">Examine text</span>
+    </button>
+
+    <div class="text-region-layer" id="textRegionLayer" aria-hidden="true"></div>
+    <div class="suggest-dismiss-scrim" id="suggestDismissScrim" tabindex="-1" aria-hidden="true"></div>
+    <div class="quick-suggest-layer" id="quickSuggestLayer" role="group" aria-label="Text actions">
+      <button type="button" class="quick-suggest-pill" data-quick="copy">Copy text</button>
+      <button type="button" class="quick-suggest-pill" data-quick="calendar">Add to calendar</button>
+      <button type="button" class="quick-suggest-pill" data-quick="reminder">Create reminder</button>
+    </div>
 
     <div class="intent-wrap" id="intentWrap">
       <div class="intent-panel">
         <p class="intent-hint hidden" id="intentHint"></p>
         <div class="intent-row">
-          <button type="button" class="intent-pill hidden" id="btnEvent" data-intent="event">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
-            Add to Calendar
+          <button type="button" class="intent-pill secondary hidden" id="btnCopyText" data-intent="copy">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy text
           </button>
-          <button type="button" class="intent-pill hidden" id="btnTask" data-intent="task">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-            Create Task
+          <button type="button" class="intent-pill secondary hidden" id="btnNote" data-intent="note">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Save note
           </button>
         </div>
         <div class="intent-row">
+          <button type="button" class="intent-pill hidden" id="btnEvent" data-intent="event">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+            Add to calendar
+          </button>
+          <button type="button" class="intent-pill hidden" id="btnTodoList" data-intent="todolist">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><path d="M21 12c.5 4.5-2.2 8-7 8s-8-3.5-7-8"/></svg>
+            Create checklist
+          </button>
+        </div>
+        <div class="intent-row">
+          <button type="button" class="intent-pill hidden" id="btnOpenMaps" data-intent="maps">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Open in maps
+          </button>
+          <button type="button" class="intent-pill dark hidden" id="btnTask" data-intent="task">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            Create Task
+          </button>
           <button type="button" class="intent-pill hidden" id="btnGoogleDoc" data-intent="gdoc">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
             Google Doc
           </button>
-          <button type="button" class="intent-pill hidden" id="btnTodoList" data-intent="todolist">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><path d="M21 12c.5 4.5-2.2 8-7 8s-8-3.5-7-8"/></svg>
-            Todo list
-          </button>
         </div>
         <div class="intent-row">
-          <button type="button" class="intent-pill secondary hidden" id="btnNote" data-intent="note">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Note
-          </button>
           <button type="button" class="intent-pill secondary hidden" id="btnReminder" data-intent="reminder">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3L2 6"/></svg>
             Reminder
@@ -653,16 +1458,64 @@
       </div>
     </div>
 
-    <div class="camera-modes">
-      <span class="active">Photo</span>
-      <span>Panorama</span>
-      <span>Night</span>
+    <div class="shutter-row">
+      <div class="thumb" id="thumbPreview" role="button" tabindex="0" aria-label="Gallery" title="Gallery"></div>
+      <button type="button" class="shutter" id="btnShutter" aria-label="Capture"></button>
+      <button type="button" class="flip" id="btnFlip" aria-label="Flip camera" title="Switch camera">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8h3"/><path d="M4 14c0 4.4 3.6 8 8 8s8-3.6 8-8h-3"/>
+          <path d="M15 3h5v5M9 21H4v-5"/>
+        </svg>
+      </button>
     </div>
 
-    <div class="shutter-row">
-      <div class="thumb" aria-hidden="true"></div>
-      <button type="button" class="shutter" id="btnShutter" aria-label="Capture"></button>
-      <button type="button" class="flip" id="btnFlip" aria-label="Flip camera">↻</button>
+    <div class="camera-modes-wrap">
+      <div class="camera-modes" id="cameraModes" role="tablist" aria-label="Camera modes">
+        <button type="button" class="mode-item" role="tab" data-mode="action-pan" aria-selected="false">Action Pan</button>
+        <button type="button" class="mode-item" role="tab" data-mode="long-exposure" aria-selected="false">Long Exposure</button>
+        <button type="button" class="mode-item" role="tab" data-mode="add-me" aria-selected="false">Add Me</button>
+        <button type="button" class="mode-item" role="tab" data-mode="portrait" aria-selected="false">Portrait</button>
+        <button type="button" class="mode-item active" role="tab" data-mode="photo" aria-selected="true" id="mode-photo">Photo</button>
+        <button type="button" class="mode-item" role="tab" data-mode="night-sight" aria-selected="false">Night Sight</button>
+        <button type="button" class="mode-item" role="tab" data-mode="panorama" aria-selected="false">Panorama</button>
+      </div>
+    </div>
+
+    <div class="camera-bottom-bar">
+      <button type="button" class="btn-settings-circle" id="btnSettings" aria-label="Settings" title="Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+      <div class="photo-video-toggle" role="group" aria-label="Photo or video">
+        <button type="button" class="pvt-btn active" id="pvtPhoto" data-pvt="photo" aria-pressed="true" aria-label="Photo mode">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+            <circle cx="12" cy="13" r="3.5"/>
+          </svg>
+        </button>
+        <button type="button" class="pvt-btn" id="pvtVideo" data-pvt="video" aria-pressed="false" aria-label="Video mode">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="2" y="7" width="15" height="10" rx="2"/>
+            <path d="M17 11l5-3v8l-5-3"/>
+          </svg>
+        </button>
+      </div>
+      <button type="button" class="btn-adjust-squircle" id="btnAdjustments" aria-label="Adjustments and grid" title="Grid & adjustments">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h4"/><circle cx="11" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+          <path d="M15 7h5M4 12h2"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+          <path d="M13 12h7M4 17h6"/><circle cx="13" cy="17" r="1.5" fill="currentColor" stroke="none"/>
+          <path d="M17 17h3"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="nav-gesture-bar" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -748,22 +1601,41 @@
       </div>
 
       <div class="modal-actions" id="modalFooter">
-        <button type="button" class="btn-text-cancel" id="btnCancel">Cancel</button>
-        <button type="button" class="btn-save-blue" id="btnSave">Save</button>
+        <button type="button" class="btn-text-cancel" id="btnMoreFooter" style="padding:8px 4px;font-size:15px;">More options</button>
+        <div class="modal-actions-right">
+          <button type="button" class="btn-text-cancel" id="btnCancel">Cancel</button>
+          <button type="button" class="btn-save-blue" id="btnSave">Save</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast" aria-live="polite">
     <span id="toastMsg">Saved</span>
-    <a href="#" id="toastView">Open</a>
+    <a href="#" id="toastView">View</a>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script>
+  <div class="settings-backdrop" id="settingsBackdrop" aria-hidden="true">
+    <div class="settings-sheet" role="dialog" aria-labelledby="settingsTitle">
+      <h3 id="settingsTitle">Analysis server</h3>
+      <p>
+        “Examine text” sends the frame to <code style="font-size:12px;">POST /analyze</code> on this app’s server. The server calls Gemini using <code style="font-size:12px;">GEMINI_API_KEY</code> from the environment — the key is not stored in the browser.
+      </p>
+      <p style="margin-top:10px;font-size:13px;opacity:0.9;">
+        Run <code style="font-size:12px;">npm install</code> and <code style="font-size:12px;">npm start</code> from the project root, with a <code style="font-size:12px;">.env</code> file (see <code style="font-size:12px;">.env.example</code>).
+      </p>
+      <div class="settings-row" style="margin-top:16px;">
+        <button type="button" class="btn-sheet-primary" id="btnCloseSettingsSheet">Close</button>
+      </div>
+    </div>
+  </div>
+
+    <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const btnCopyText = document.getElementById("btnCopyText");
+    const btnOpenMaps = document.getElementById("btnOpenMaps");
     const btnEvent = document.getElementById("btnEvent");
     const btnTask = document.getElementById("btnTask");
     const btnGoogleDoc = document.getElementById("btnGoogleDoc");
@@ -792,11 +1664,23 @@
     const toast = document.getElementById("toast");
     const toastView = document.getElementById("toastView");
     const intentWrap = document.getElementById("intentWrap");
+    const btnShutter = document.getElementById("btnShutter");
+    const captureFlash = document.getElementById("captureFlash");
+    const analyzingBadge = document.getElementById("analyzingBadge");
+    const analyzingText = document.getElementById("analyzingText");
+    const thumbPreview = document.getElementById("thumbPreview");
+    const settingsBackdrop = document.getElementById("settingsBackdrop");
+    const modalBodyScroll = document.getElementById("modalBodyScroll");
+    const moreOptionsEl = document.getElementById("moreOptions");
+    const textHintBar = document.getElementById("textHintBar");
+    const textHintIcon = document.getElementById("textHintIcon");
+    const textRegionLayer = document.getElementById("textRegionLayer");
+    const quickSuggestLayer = document.getElementById("quickSuggestLayer");
+    const suggestDismissScrim = document.getElementById("suggestDismissScrim");
+    const cameraModesRoot = document.getElementById("cameraModes");
 
     let stream = null;
     let facingMode = "environment";
-    let worker = null;
-    let ocrBusy = false;
     let lastText = "";
     let extracted = { title: "", when: "", location: "" };
     let lastClassification = null;
@@ -804,11 +1688,107 @@
     let currentIntent = "event";
     let lastSavedPayload = null;
     let lastBlobUrl = null;
+    let lastGeminiResult = null;
+    let lastMapsQuery = "";
+    let examinationUIActive = false;
+    let previewPollBusy = false;
+    let hintExamineBusy = false;
+    let previewCanvas = null;
+    let previewCtx = null;
+    let previewHintPositiveStreak = 0;
+    let previewHintNegativeStreak = 0;
+    const PREVIEW_HINT_ON_STREAK = 2;
+    const PREVIEW_HINT_OFF_STREAK = 2;
+    const MIN_TEXT_LEN = 8;
+    const PREVIEW_POLL_MS = 1500;
 
-    const OCR_INTERVAL_MS = 1500;
-    const MIN_TEXT_LEN = 12;
+    function isPhotoMode() {
+      const a = cameraModesRoot && cameraModesRoot.querySelector(".mode-item.active");
+      return !!(a && a.getAttribute("data-mode") === "photo");
+    }
 
-    /** Heuristic OCR routing: calendar vs list vs long document vs note */
+    function parseJsonFromModel(raw) {
+      if (!raw || typeof raw !== "string") return null;
+      let s = raw.trim();
+      const fence = s.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
+      if (fence) s = fence[1].trim();
+      try {
+        return JSON.parse(s);
+      } catch {
+        return null;
+      }
+    }
+
+    async function analyzeFrameViaServer(imageBase64) {
+      const instruction = `You extract text and light structure from a camera frame. Do NOT suggest user actions or intents.
+
+Return ONLY valid JSON (no markdown fences):
+{
+  "extractedText": string,
+  "hasMeaningfulText": boolean,
+  "structured": {
+    "title": string,
+    "dateOrTime": string,
+    "hasListStructure": boolean,
+    "location": string
+  }
+}
+
+Rules:
+- extractedText: full visible printed/handwritten text, or "" if none.
+- hasMeaningfulText: true only if there is enough readable text to be useful (about a short phrase or more).
+- structured.title: short heading if obvious, else "".
+- structured.dateOrTime: any calendar date or clock time visible, compact human-readable string, else "".
+- structured.hasListStructure: true if content is clearly a bullet/numbered/checklist style list.
+- structured.location: venue, address, room, or place name if obvious, else "".
+- If no meaningful text: extractedText "", hasMeaningfulText false, and use "", false, "" for structured fields.`;
+
+      const body = {
+        contents: [
+          {
+            parts: [{ text: instruction }, { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }],
+          },
+        ],
+        generationConfig: { temperature: 0.12, maxOutputTokens: 4096, responseMimeType: "application/json" },
+      };
+
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          (data && data.error && data.error.message) || res.statusText || "Analyze request failed";
+        throw new Error(msg);
+      }
+      const part =
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0];
+      const txt = part && part.text ? part.text : "";
+      const parsed = parseJsonFromModel(txt);
+      if (!parsed || typeof parsed.hasMeaningfulText !== "boolean") {
+        throw new Error("Invalid Gemini response");
+      }
+      return parsed;
+    }
+
+    function mergeGeminiIntoExtracted(g) {
+      const text = (g.extractedText || "").replace(/\|/g, "I").trim();
+      const base = text ? parseEntities(text) : { title: "", when: "", location: "" };
+      const s = g.structured && typeof g.structured === "object" ? g.structured : {};
+      return {
+        title: (s.title && String(s.title).trim()) || base.title,
+        when: (s.dateOrTime && String(s.dateOrTime).trim()) || base.when,
+        location: (s.location && String(s.location).trim()) || base.location,
+        hasListStructure: s.hasListStructure === true,
+      };
+    }
+
     function classifyScan(text) {
       const t = text.trim();
       const lower = t.toLowerCase();
@@ -866,50 +1846,89 @@
       return items.slice(0, 40);
     }
 
-    function applyIntentVisibility(c) {
-      const s = c.scores;
-      const hasDate = s.event >= 1.5 || c.hasStrongDate;
-      const looksList = s.todoList >= 2;
-      const looksDoc = s.document >= 2 || lastText.length > 320;
-
-      btnEvent.classList.toggle("hidden", !hasDate);
-      btnTodoList.classList.toggle("hidden", !looksList);
-      const preferDocOverList = s.document >= s.todoList + 0.5;
-      btnGoogleDoc.classList.toggle("hidden", !(looksDoc && (preferDocOverList || !looksList)));
-      /* Always show Create Task — hiding it when a list was detected broke taps for many scans */
-      btnTask.classList.remove("hidden");
-
-      btnNote.classList.remove("hidden");
-      btnReminder.classList.remove("hidden");
-      btnShare.classList.remove("hidden");
-
-      const visible = [btnEvent, btnTask, btnGoogleDoc, btnTodoList].filter((b) => !b.classList.contains("hidden"));
-      if (visible.length === 0) {
-        btnGoogleDoc.classList.remove("hidden");
-        btnTask.classList.remove("hidden");
-      }
-
-      let extra = "";
-      if (hasDate) extra = " · Try Calendar first";
-      else if (looksList) extra = " · Try Todo list";
-      else if (looksDoc) extra = " · Try Google Doc";
-      intentHint.textContent = c.hint + extra;
-      intentHint.classList.remove("hidden");
-    }
+    const INTENT_PILL_BUTTONS = [
+      btnCopyText,
+      btnNote,
+      btnEvent,
+      btnTodoList,
+      btnOpenMaps,
+      btnTask,
+      btnGoogleDoc,
+      btnReminder,
+      btnShare,
+    ];
 
     function showIntents(show) {
       intentWrap.classList.toggle("has-intents", show);
       if (!show) {
         intentHint.classList.add("hidden");
-        [
-          btnEvent,
-          btnTask,
-          btnGoogleDoc,
-          btnTodoList,
-          btnNote,
-          btnReminder,
-          btnShare,
-        ].forEach((el) => el.classList.add("hidden"));
+        INTENT_PILL_BUTTONS.forEach((el) => {
+          el.classList.add("hidden");
+          el.classList.remove("dark");
+        });
+      }
+    }
+
+    function setIntentPillLabel(btn, label) {
+      if (!btn || !label) return;
+      for (const n of btn.childNodes) {
+        if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) {
+          n.textContent = " " + label.trim();
+          return;
+        }
+      }
+    }
+
+    function detectListStructureHeuristic(text) {
+      const lines = (text || "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+      const listLineRe = /^(\s*[-*•]\s+|\s*\d+[\.)]\s+|\s*\[[ xX]\]\s+)/;
+      return lines.filter((l) => listLineRe.test(l)).length >= 2;
+    }
+
+    function hasDateTimeSignal(structured, text) {
+      const d = structured && structured.dateOrTime && String(structured.dateOrTime).trim();
+      if (d) return true;
+      return !!extractDateTime((text || "").trim());
+    }
+
+    function resolveLocationQuery(structured, text) {
+      const g = structured && structured.location && String(structured.location).trim();
+      if (g) return g;
+      const fromText = extractLocation((text || "").trim());
+      return fromText || "";
+    }
+
+    function applyRuleBasedIntents(parsed, text) {
+      const clean = (text || "").trim();
+      const s = parsed && parsed.structured && typeof parsed.structured === "object" ? parsed.structured : {};
+      const hasList = s.hasListStructure === true || detectListStructureHeuristic(clean);
+      const hasDt = hasDateTimeSignal(s, clean);
+      const locQuery = resolveLocationQuery(s, clean);
+
+      INTENT_PILL_BUTTONS.forEach((b) => {
+        b.classList.add("hidden");
+        b.classList.remove("dark");
+      });
+
+      btnCopyText.classList.remove("hidden");
+      setIntentPillLabel(btnCopyText, "Copy text");
+      btnNote.classList.remove("hidden");
+      setIntentPillLabel(btnNote, "Save note");
+
+      if (hasDt) {
+        btnEvent.classList.remove("hidden");
+        setIntentPillLabel(btnEvent, "Add to calendar");
+      }
+      if (hasList) {
+        btnTodoList.classList.remove("hidden");
+        setIntentPillLabel(btnTodoList, "Create checklist");
+      }
+      if (locQuery) {
+        btnOpenMaps.classList.remove("hidden");
+        setIntentPillLabel(btnOpenMaps, "Open in maps");
+        lastMapsQuery = locQuery;
+      } else {
+        lastMapsQuery = "";
       }
     }
 
@@ -965,10 +1984,6 @@
       return { title, when, location, confidence: Math.min(confidence, 1) };
     }
 
-    async function initTesseract() {
-      worker = await Tesseract.createWorker("eng", 1, { logger: () => {} });
-    }
-
     async function startCamera() {
       if (stream) stream.getTracks().forEach((t) => t.stop());
       stream = await navigator.mediaDevices.getUserMedia({
@@ -981,33 +1996,294 @@
       canvas.height = video.videoHeight;
     }
 
-    async function runOcrFrame() {
-      if (!worker || ocrBusy || !video.videoWidth) return;
-      ocrBusy = true;
+    function triggerShutterFlash() {}
+
+    function jpegBase64FromCanvas(quality) {
+      const dataUrl = canvas.toDataURL("image/jpeg", quality || 0.82);
+      const i = dataUrl.indexOf(",");
+      return i >= 0 ? dataUrl.slice(i + 1) : dataUrl;
+    }
+
+    function clampNorm(n) {
+      return Math.max(0, Math.min(1000, Number(n) || 0));
+    }
+
+    function syntheticRegionsFromText(text) {
+      const lines = (text || "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+      const n = Math.min(Math.max(lines.length, 1), 4);
+      const regions = [];
+      const step = 720 / n;
+      for (let i = 0; i < n; i++) {
+        const y0 = Math.round(100 + i * step * 0.9);
+        const y1 = Math.round(Math.min(900, y0 + step * 0.85));
+        regions.push({ x0: 55, y0, x1: 945, y1 });
+      }
+      return regions;
+    }
+
+    function renderTextRegions(regions) {
+      if (!textRegionLayer) return;
+      textRegionLayer.innerHTML = "";
+      if (!regions || !regions.length) {
+        textRegionLayer.setAttribute("aria-hidden", "true");
+        return;
+      }
+      textRegionLayer.setAttribute("aria-hidden", "false");
+      const frag = document.createDocumentFragment();
+      for (const r of regions.slice(0, 8)) {
+        const x0 = clampNorm(r.x0 ?? r.xmin);
+        const y0 = clampNorm(r.y0 ?? r.ymin);
+        const x1 = clampNorm(r.x1 ?? r.xmax ?? x0 + 80);
+        const y1 = clampNorm(r.y1 ?? r.ymax ?? y0 + 80);
+        if (x1 <= x0 + 2 || y1 <= y0 + 2) continue;
+        const el = document.createElement("div");
+        el.className = "text-region-box";
+        el.style.left = x0 / 10 + "%";
+        el.style.top = y0 / 10 + "%";
+        el.style.width = (x1 - x0) / 10 + "%";
+        el.style.height = (y1 - y0) / 10 + "%";
+        frag.appendChild(el);
+      }
+      textRegionLayer.appendChild(frag);
+    }
+
+    function clearTextRegions() {
+      if (!textRegionLayer) return;
+      textRegionLayer.innerHTML = "";
+      textRegionLayer.setAttribute("aria-hidden", "true");
+    }
+
+    function hideQuickSuggestions() {
+      if (quickSuggestLayer) quickSuggestLayer.classList.remove("is-visible");
+      if (suggestDismissScrim) suggestDismissScrim.classList.remove("is-on");
+    }
+
+    function showExaminationResultShell() {
+      examinationUIActive = true;
+      if (textHintBar) {
+        textHintBar.classList.remove("is-visible", "is-examining");
+        textHintBar.setAttribute("aria-hidden", "true");
+      }
+      if (textHintIcon) textHintIcon.classList.remove("is-armed");
+      if (quickSuggestLayer) quickSuggestLayer.classList.remove("is-visible");
+      if (suggestDismissScrim) suggestDismissScrim.classList.add("is-on");
+    }
+
+    function dismissExaminationUI() {
+      clearTextRegions();
+      hideQuickSuggestions();
+      if (textHintBar) textHintBar.classList.remove("is-examining");
+      if (textHintIcon) textHintIcon.classList.remove("is-armed");
+      examinationUIActive = false;
+      hintExamineBusy = false;
+      previewHintPositiveStreak = 0;
+      previewHintNegativeStreak = 0;
+      showIntents(false);
+      window.setTimeout(() => pollPreviewTextHeuristic(), 400);
+    }
+
+    function setTextHintBarVisible(show) {
+      if (!textHintBar) return;
+      if (
+        show &&
+        isPhotoMode() &&
+        !examinationUIActive &&
+        !hintExamineBusy &&
+        !backdrop.classList.contains("open") &&
+        !settingsBackdrop.classList.contains("open")
+      ) {
+        textHintBar.classList.add("is-visible");
+        textHintBar.setAttribute("aria-hidden", "false");
+      } else {
+        textHintBar.classList.remove("is-visible", "is-examining");
+        textHintBar.setAttribute("aria-hidden", "true");
+        if (!examinationUIActive && textHintIcon) textHintIcon.classList.remove("is-armed");
+      }
+    }
+
+    function getPreviewDrawContext() {
+      if (!previewCanvas) {
+        previewCanvas = document.createElement("canvas");
+        previewCtx = previewCanvas.getContext("2d", { willReadFrequently: true });
+      }
+      return { pc: previewCanvas, pctx: previewCtx };
+    }
+
+    function previewFrameLikelyTextRegion(w, h, data) {
+      function lum(i) {
+        return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      }
+      const x0 = Math.floor(w * 0.18);
+      const x1 = Math.ceil(w * 0.82);
+      const y0 = Math.floor(h * 0.2);
+      const y1 = Math.ceil(h * 0.8);
+      let edge = 0;
+      let nEdge = 0;
+      let sum = 0;
+      let sumSq = 0;
+      let nPix = 0;
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = (y * w + x) * 4;
+          const L = lum(i);
+          sum += L;
+          sumSq += L * L;
+          nPix++;
+          if (x < x1 - 1) {
+            edge += Math.abs(L - lum(i + 4));
+            nEdge++;
+          }
+          if (y < y1 - 1) {
+            const j = ((y + 1) * w + x) * 4;
+            edge += Math.abs(L - lum(j));
+            nEdge++;
+          }
+        }
+      }
+      if (nPix < 8 || nEdge < 1) return { likely: false, avgEdge: 0, contrast: 0 };
+      const mean = sum / nPix;
+      const variance = Math.max(0, sumSq / nPix - mean * mean);
+      const contrast = Math.sqrt(variance);
+      const avgEdge = edge / nEdge;
+      const likely = avgEdge > 11 && avgEdge < 64 && contrast > 17 && contrast < 98;
+      return { likely, avgEdge, contrast };
+    }
+
+    function previewNoTextSignal(likely, avgEdge, contrast, hintBarVisible) {
+      if (!likely) return true;
+      if (!hintBarVisible) return false;
+      if (avgEdge < 9.5 || contrast < 15) return true;
+      if (avgEdge > 66 || contrast > 96) return true;
+      return false;
+    }
+
+    function pollPreviewTextHeuristic() {
+      if (!isPhotoMode()) {
+        setTextHintBarVisible(false);
+        previewHintPositiveStreak = 0;
+        previewHintNegativeStreak = 0;
+        return;
+      }
+      if (examinationUIActive || hintExamineBusy) return;
+      if (backdrop.classList.contains("open") || settingsBackdrop.classList.contains("open")) return;
+      if (!video.videoWidth || previewPollBusy) return;
+
+      previewPollBusy = true;
       try {
+        const { pc, pctx } = getPreviewDrawContext();
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const w = 128;
+        const h = Math.max(1, Math.round(vh * (w / vw)));
+        pc.width = w;
+        pc.height = h;
+        pctx.drawImage(video, 0, 0, vw, vh, 0, 0, w, h);
+        const img = pctx.getImageData(0, 0, w, h);
+        const { likely, avgEdge, contrast } = previewFrameLikelyTextRegion(w, h, img.data);
+        const hintOn = textHintBar && textHintBar.classList.contains("is-visible");
+        const noText = previewNoTextSignal(likely, avgEdge, contrast, hintOn);
+
+        if (!noText) {
+          previewHintPositiveStreak += 1;
+          previewHintNegativeStreak = 0;
+          if (previewHintPositiveStreak >= PREVIEW_HINT_ON_STREAK) {
+            setTextHintBarVisible(true);
+          }
+        } else {
+          previewHintNegativeStreak += 1;
+          previewHintPositiveStreak = 0;
+          if (previewHintNegativeStreak >= PREVIEW_HINT_OFF_STREAK) {
+            setTextHintBarVisible(false);
+          }
+        }
+      } catch (e) {
+        console.warn("Preview heuristic:", e);
+      } finally {
+        previewPollBusy = false;
+      }
+    }
+
+    async function runExamineTextFlow() {
+      if (!video.videoWidth || hintExamineBusy) return;
+      hintExamineBusy = true;
+      if (textHintBar) textHintBar.classList.add("is-examining");
+      if (textHintIcon) textHintIcon.classList.add("is-armed");
+      analyzingBadge.classList.add("show");
+      analyzingText.textContent = "Reading with Gemini…";
+      showIntents(false);
+
+      try {
+        await new Promise((r) => setTimeout(r, 300));
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const {
-          data: { text },
-        } = await worker.recognize(canvas);
-        const clean = text.replace(/\|/g, "I").trim();
-        if (clean.length < MIN_TEXT_LEN) {
-          showIntents(false);
+        const b64 = jpegBase64FromCanvas(0.88);
+        let parsed = null;
+        try {
+          parsed = await analyzeFrameViaServer(b64);
+        } catch (err) {
+          console.warn("Gemini examine failed:", err);
+          showToast(err && err.message ? err.message : "Could not reach Gemini", null);
           return;
         }
-        lastText = clean;
-        const ent = parseEntities(clean);
-        extracted = { title: ent.title, when: ent.when, location: ent.location };
-        lastClassification = classifyScan(clean);
-        parsedTodoLines = parseTodoItems(clean);
-        if (parsedTodoLines.length === 0) {
-          parsedTodoLines = clean.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0).slice(0, 20);
+
+        const clean = (parsed.extractedText || "").replace(/\|/g, "I").trim();
+        if (!parsed.hasMeaningfulText && clean.length < MIN_TEXT_LEN) {
+          showToast("No clear text in frame", null);
+          return;
         }
-        applyIntentVisibility(lastClassification);
+
+        lastText = clean || lastText;
+        const ent = parseEntities(lastText);
+        const merged = mergeGeminiIntoExtracted(parsed);
+        extracted = {
+          title: merged.title || ent.title,
+          when: merged.when || ent.when,
+          location: merged.location || ent.location,
+        };
+        lastClassification = classifyScan(lastText);
+        parsedTodoLines = parseTodoItems(lastText);
+        if (parsedTodoLines.length === 0) {
+          parsedTodoLines = lastText
+            .split(/\n/)
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0)
+            .slice(0, 20);
+        }
+        lastGeminiResult = parsed;
+
+        renderTextRegions(syntheticRegionsFromText(lastText));
+
+        const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
+        intentHint.textContent = preview + (lastText.length > 220 ? "…" : "");
+        intentHint.classList.remove("hidden");
+
+        applyRuleBasedIntents(parsed, lastText);
         showIntents(true);
-      } catch (e) {
-        console.error(e);
+        showExaminationResultShell();
       } finally {
-        ocrBusy = false;
+        analyzingBadge.classList.remove("show");
+        hintExamineBusy = false;
+        if (textHintBar) textHintBar.classList.remove("is-examining");
+        if (!examinationUIActive && textHintIcon) textHintIcon.classList.remove("is-armed");
+      }
+    }
+
+    function capturePhoto() {
+      if (!video.videoWidth) return;
+      dismissExaminationUI();
+      setTextHintBarVisible(false);
+      previewHintPositiveStreak = 0;
+      previewHintNegativeStreak = 0;
+      showIntents(false);
+
+      btnShutter.disabled = true;
+      triggerShutterFlash();
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        thumbPreview.style.backgroundImage = `url(${canvas.toDataURL("image/jpeg", 0.5)})`;
+      } finally {
+        window.setTimeout(() => {
+          btnShutter.disabled = false;
+        }, 180);
       }
     }
 
@@ -1063,7 +2339,7 @@
       }
 
       if (intent === "todolist") {
-        modalTitle.textContent = "Todo list";
+        modalTitle.textContent = "Create checklist";
         modalSub.classList.add("hidden");
         renderTodoList();
         btnSave.textContent = "Save list";
@@ -1073,7 +2349,7 @@
       }
 
       if (intent === "note") {
-        modalTitle.textContent = "Note";
+        modalTitle.textContent = "Save note";
         modalSub.classList.add("hidden");
         fNoteTitle.value = guessTitle(lastText).slice(0, 120);
         fNoteBody.value = lastText || "";
@@ -1141,6 +2417,12 @@
       };
     }
 
+    const NOT_AVAILABLE_TOAST = "Not available for testing";
+
+    function notAvailableToast() {
+      showToast(NOT_AVAILABLE_TOAST, null);
+    }
+
     function showToast(msg, openUrl) {
       document.getElementById("toastMsg").textContent = msg;
       if (lastBlobUrl) {
@@ -1203,47 +2485,215 @@
       }
 
       lastSavedPayload = buildPayload();
-      const json = JSON.stringify(lastSavedPayload, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
-      lastBlobUrl = URL.createObjectURL(blob);
-
-      console.log("Saved (demo — wire to Calendar / Tasks API):", lastSavedPayload);
+      console.log("Saved payload (demo):", lastSavedPayload);
 
       const labels = {
         event: "Added to Calendar",
         task: "Task created",
         reminder: "Reminder set",
       };
+
+      let viewUrl = null;
+      if (currentIntent === "event" || currentIntent === "reminder") {
+        viewUrl = buildGoogleCalendarUrl(lastSavedPayload);
+      } else {
+        const json = JSON.stringify(lastSavedPayload, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+        lastBlobUrl = URL.createObjectURL(blob);
+        viewUrl = lastBlobUrl;
+      }
+
       closeModal();
-      showToast(labels[currentIntent] || "Saved", lastBlobUrl);
+      showToast(labels[currentIntent] || "Saved", viewUrl);
+    }
+
+    function openSettings(open) {
+      settingsBackdrop.classList.toggle("open", open);
+      settingsBackdrop.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+
+    function buildGoogleCalendarUrl(payload) {
+      const text = encodeURIComponent((payload.title || "Event").slice(0, 900));
+      const details = encodeURIComponent(
+        [payload.when, payload.location, payload.notes, payload.guests].filter(Boolean).join("\n").slice(0, 3800)
+      );
+      const loc = encodeURIComponent((payload.location || "").slice(0, 500));
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&details=${details}&location=${loc}`;
     }
 
     (async function boot() {
       try {
-        await initTesseract();
         await startCamera();
-        setInterval(runOcrFrame, OCR_INTERVAL_MS);
-        runOcrFrame();
+        window.setInterval(() => pollPreviewTextHeuristic(), PREVIEW_POLL_MS);
+        window.setTimeout(() => pollPreviewTextHeuristic(), 700);
       } catch (err) {
         alert(
-          "Camera or OCR failed: " +
+          "Camera failed: " +
             (err && err.message ? err.message : err) +
-            "\n\nUse https:// or localhost and allow camera access."
+            "\n\nServe over https:// or http://localhost and allow camera access."
         );
         console.error(err);
       }
     })();
 
-    document.getElementById("btnFlip").addEventListener("click", async () => {
-      facingMode = facingMode === "environment" ? "user" : "environment";
-      try {
-        await startCamera();
-      } catch (e) {
-        console.error(e);
+    textHintBar.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!textHintBar.classList.contains("is-visible")) return;
+      runExamineTextFlow();
+    });
+
+    suggestDismissScrim.addEventListener("click", () => {
+      dismissExaminationUI();
+    });
+
+    quickSuggestLayer.querySelectorAll("[data-quick]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const q = btn.getAttribute("data-quick");
+        if (q === "copy") {
+          const t = lastText || "";
+          if (!t) {
+            showToast("Nothing to copy", null);
+            dismissExaminationUI();
+            return;
+          }
+          navigator.clipboard.writeText(t).then(
+            () => {
+              showToast("Copied", null);
+              dismissExaminationUI();
+            },
+            () => showToast("Copy blocked", null)
+          );
+          return;
+        }
+        if (q === "calendar") {
+          dismissExaminationUI();
+          openModal("event");
+          return;
+        }
+        if (q === "reminder") {
+          dismissExaminationUI();
+          openModal("reminder");
+        }
+      });
+    });
+
+    document.getElementById("btnFlip").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("thumbPreview").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("thumbPreview").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        notAvailableToast();
       }
     });
 
-    document.getElementById("btnShutter").addEventListener("click", () => runOcrFrame());
+    document.getElementById("btnSettings").addEventListener("click", () => {
+      openSettings(true);
+    });
+
+    document.getElementById("btnAiScene").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("btnHelp").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("pvtPhoto").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("pvtVideo").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("btnAdjustments").addEventListener("click", () => {
+      notAvailableToast();
+    });
+
+    document.getElementById("btnCloseSettingsSheet").addEventListener("click", () => {
+      openSettings(false);
+    });
+
+    settingsBackdrop.addEventListener("click", (e) => {
+      if (e.target === settingsBackdrop) openSettings(false);
+    });
+
+    (function initModeCarousel() {
+      const wrap = document.getElementById("cameraModes");
+      if (!wrap) return;
+
+      function scrollModeIntoViewCenter(btn, smooth) {
+        btn.scrollIntoView({
+          inline: "center",
+          block: "nearest",
+          behavior: smooth ? "smooth" : "instant",
+        });
+      }
+
+      wrap.addEventListener("click", (e) => {
+        const btn = e.target.closest(".mode-item");
+        if (!btn || !wrap.contains(btn)) return;
+        notAvailableToast();
+      });
+
+      function centerActiveMode(instant) {
+        const active = wrap.querySelector(".mode-item.active") || wrap.querySelector('[data-mode="photo"]');
+        if (active) scrollModeIntoViewCenter(active, !instant);
+      }
+
+      requestAnimationFrame(() => {
+        centerActiveMode(true);
+        requestAnimationFrame(() => centerActiveMode(true));
+      });
+
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => centerActiveMode(true), 80);
+      });
+    })();
+
+    document.getElementById("btnMoreFooter").addEventListener("click", () => {
+      if (moreOptionsEl) {
+        moreOptionsEl.open = true;
+        moreOptionsEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    });
+
+    btnShutter.addEventListener("click", () => capturePhoto());
+
+    btnCopyText.addEventListener("click", () => {
+      const t = lastText || "";
+      if (!t) {
+        showToast("Nothing to copy", null);
+        return;
+      }
+      navigator.clipboard.writeText(t).then(
+        () => showToast("Copied", null),
+        () => showToast("Copy blocked", null)
+      );
+    });
+
+    btnOpenMaps.addEventListener("click", () => {
+      const q = (lastMapsQuery || extracted.location || "").trim();
+      if (!q) {
+        showToast("No location found", null);
+        return;
+      }
+      window.open(
+        "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q),
+        "_blank",
+        "noopener,noreferrer"
+      );
+    });
 
     btnEvent.addEventListener("click", () => openModal("event"));
     btnTask.addEventListener("click", () => openModal("task"));
