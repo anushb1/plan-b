@@ -217,13 +217,19 @@
     .text-region-box {
       position: absolute;
       border: 2px solid rgba(255, 230, 130, 0.92);
-      border-radius: 4px;
+      border-radius: 5px;
       box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.35),
-        0 0 20px rgba(255, 220, 100, 0.25);
-      background: rgba(255, 235, 150, 0.06);
-      animation: region-fade-in 0.45s ease forwards;
+        0 0 24px rgba(255, 220, 100, 0.35),
+        inset 0 0 12px rgba(255, 248, 200, 0.12);
+      background: rgba(255, 235, 150, 0.08);
+      animation: region-fade-in 0.45s ease forwards, region-pulse 2.2s ease-in-out infinite;
       opacity: 0;
+    }
+
+    @keyframes region-pulse {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 18px rgba(255, 220, 100, 0.28); }
+      50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 32px rgba(255, 230, 130, 0.45); }
     }
 
     @keyframes region-fade-in {
@@ -314,11 +320,13 @@
 
     @media (prefers-reduced-motion: reduce) {
       .pixel-text-hint.is-visible,
-      .text-region-box,
       .quick-suggest-layer,
       .quick-suggest-pill {
         animation: none !important;
         transition: opacity 0.15s ease !important;
+      }
+      .text-region-box {
+        animation: region-fade-in 0.2s ease forwards !important;
       }
       .quick-suggest-layer:not(.is-visible) .quick-suggest-pill,
       .quick-suggest-layer.is-visible .quick-suggest-pill {
@@ -1174,6 +1182,25 @@
       display: none;
     }
 
+    /* Google Keep–style list sheet */
+    .modal[data-mode="todolist"] .modal-header {
+      background: linear-gradient(180deg, #fff8e1 0%, #ffffff 72%);
+      border-bottom: 1px solid rgba(251, 188, 4, 0.22);
+    }
+
+    .modal[data-mode="todolist"] #blockTodo > p:first-child {
+      color: #5f6368;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .modal[data-mode="todolist"] .todo-items li {
+      border-bottom-color: #e8eaed;
+      font-size: 15px;
+    }
+
     .gdoc-steps {
       font-size: 14px;
       color: #3f3f46;
@@ -1338,6 +1365,43 @@
       color: var(--md-on-primary);
     }
 
+    /* OCR / camera pipeline debug: ?frameDebug=1 */
+    .frame-debug-panel {
+      position: absolute;
+      right: 8px;
+      top: 118px;
+      z-index: 20;
+      max-width: min(200px, 52vw);
+      border: 2px solid rgba(255, 200, 80, 0.92);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      pointer-events: none;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .frame-debug-panel.is-on {
+      display: block;
+    }
+
+    .frame-debug-panel canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      vertical-align: top;
+    }
+
+    .frame-debug-label {
+      font-size: 9px;
+      line-height: 1.35;
+      color: #fafafa;
+      padding: 6px 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      word-break: break-word;
+    }
+
   </style>
 </head>
 <body>
@@ -1349,6 +1413,10 @@
           <div class="app" id="app">
     <video id="video" playsinline autoplay muted></video>
     <canvas id="canvas"></canvas>
+    <div class="frame-debug-panel" id="frameDebugPanel" aria-hidden="true">
+      <canvas id="frameDebugCanvas" width="240" height="135"></canvas>
+      <div class="frame-debug-label" id="frameDebugLabel">Frame debug</div>
+    </div>
     <div class="capture-flash" id="captureFlash" aria-hidden="true"></div>
     <div class="overlay"></div>
 
@@ -1390,21 +1458,21 @@
       <span id="analyzingText">Analyzing…</span>
     </div>
 
-    <button type="button" class="pixel-text-hint" id="textHintBar" aria-label="Examine text in view" aria-hidden="true">
+    <button type="button" class="pixel-text-hint" id="textHintBar" aria-label="Examine Text in view" aria-hidden="true">
       <span class="pixel-text-hint__ico" id="textHintIcon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 7V4h3M4 17v3h3M20 7V4h-3M20 17v3h-3"/>
           <path d="M7 8.5h10M7 12h8M7 15.5h6"/>
         </svg>
       </span>
-      <span class="pixel-text-hint__label">Examine text</span>
+      <span class="pixel-text-hint__label">Examine Text</span>
     </button>
 
     <div class="text-region-layer" id="textRegionLayer" aria-hidden="true"></div>
     <div class="suggest-dismiss-scrim" id="suggestDismissScrim" tabindex="-1" aria-hidden="true"></div>
     <div class="quick-suggest-layer" id="quickSuggestLayer" role="group" aria-label="Text actions">
-      <button type="button" class="quick-suggest-pill" data-quick="copy">Copy text</button>
-      <button type="button" class="quick-suggest-pill" data-quick="calendar">Add to calendar</button>
+      <button type="button" class="quick-suggest-pill" data-quick="copy">Copy Text</button>
+      <button type="button" class="quick-suggest-pill" data-quick="calendar">Add to Calendar</button>
       <button type="button" class="quick-suggest-pill" data-quick="reminder">Create reminder</button>
     </div>
 
@@ -1414,7 +1482,7 @@
         <div class="intent-row">
           <button type="button" class="intent-pill secondary hidden" id="btnCopyText" data-intent="copy">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            Copy text
+            Copy Text
           </button>
           <button type="button" class="intent-pill secondary hidden" id="btnNote" data-intent="note">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -1428,7 +1496,7 @@
           </button>
           <button type="button" class="intent-pill hidden" id="btnTodoList" data-intent="todolist">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><path d="M21 12c.5 4.5-2.2 8-7 8s-8-3.5-7-8"/></svg>
-            Create checklist
+            Create list
           </button>
         </div>
         <div class="intent-row">
@@ -1588,7 +1656,7 @@
         </div>
 
         <div id="blockTodo">
-          <p style="font-size:13px;color:#8e8e93;margin-bottom:8px;">Items from your scan</p>
+          <p>Checklist</p>
           <ul class="todo-items" id="todoItems"></ul>
         </div>
 
@@ -1619,10 +1687,13 @@
     <div class="settings-sheet" role="dialog" aria-labelledby="settingsTitle">
       <h3 id="settingsTitle">Analysis server</h3>
       <p>
-        “Examine text” sends the frame to <code style="font-size:12px;">POST /analyze</code> on this app’s server. The server calls Gemini using <code style="font-size:12px;">GEMINI_API_KEY</code> from the environment — the key is not stored in the browser.
+        Live preview runs <strong>Tesseract.js</strong> in your browser (no server round-trip). “Examine text” sends a full-quality frame to <code style="font-size:12px;">POST /analyze</code>; the server calls Gemini with <code style="font-size:12px;">GEMINI_API_KEY</code> — that key is not stored in the browser.
       </p>
       <p style="margin-top:10px;font-size:13px;opacity:0.9;">
         Run <code style="font-size:12px;">npm install</code> and <code style="font-size:12px;">npm start</code> from the project root, with a <code style="font-size:12px;">.env</code> file (see <code style="font-size:12px;">.env.example</code>).
+      </p>
+      <p style="margin-top:12px;font-size:12px;opacity:0.88;line-height:1.45;">
+        Preview: <strong>Tesseract.js</strong> (eng LSTM) on downscaled frames. Must use <code style="font-size:11px;">http://localhost</code> (not <code style="font-size:11px;">file://</code>). English data loads from the default Tesseract.js CDN (first run needs network). Debug: <code style="font-size:11px;">?frameDebug=1</code>, <code style="font-size:11px;">?ocrLog=1</code>, <code style="font-size:11px;">?textDebug=1</code>, <code style="font-size:11px;">?ocrTest=1</code>.
       </p>
       <div class="settings-row" style="margin-top:16px;">
         <button type="button" class="btn-sheet-primary" id="btnCloseSettingsSheet">Close</button>
@@ -1630,6 +1701,7 @@
     </div>
   </div>
 
+    <script src="/vendor/tesseract/tesseract.min.js"></script>
     <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
@@ -1695,12 +1767,120 @@
     let hintExamineBusy = false;
     let previewCanvas = null;
     let previewCtx = null;
-    let previewHintPositiveStreak = 0;
-    let previewHintNegativeStreak = 0;
-    const PREVIEW_HINT_ON_STREAK = 2;
-    const PREVIEW_HINT_OFF_STREAK = 2;
     const MIN_TEXT_LEN = 8;
-    const PREVIEW_POLL_MS = 1500;
+    const PREVIEW_POLL_MS = 400;
+    /** Tesseract preview OCR on downscaled canvas; “Examine text” still uses Gemini (POST /analyze). */
+    const OCR_PREVIEW_MAX_WIDTH = 960;
+    const HINT_DEBOUNCE_SHOW_MS = 0;
+    const HINT_DEBOUNCE_HIDE_MS = 300;
+    /** After a positive text cue, keep “Examine Text” up until this long after the last positive poll (reduces flicker). */
+    const TEXT_HINT_HOLD_MS = 3000;
+    /** Heuristic cues (softTextCue / structuredDocCue) are not scored for UI gating — see pollPreviewTextDetection. */
+    const TEXT_DETECT_DEBUG =
+      typeof location !== "undefined" &&
+      (new URLSearchParams(location.search).get("textDebug") === "1" ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("textDebug") === "1"));
+
+    function ocrLogVerbose() {
+      return (
+        TEXT_DETECT_DEBUG ||
+        (typeof location !== "undefined" && new URLSearchParams(location.search).get("ocrLog") === "1") ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("ocrLog") === "1")
+      );
+    }
+
+    /** HAVE_CURRENT_DATA — enough data for current frame; required before drawImage → OCR canvas. */
+    const VIDEO_READYSTATE_MIN = 2;
+
+    function frameDebugEnabled() {
+      return (
+        (typeof location !== "undefined" && new URLSearchParams(location.search).get("frameDebug") === "1") ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("frameDebug") === "1")
+      );
+    }
+
+    function getFrameDebugEls() {
+      return {
+        panel: document.getElementById("frameDebugPanel"),
+        dCanvas: document.getElementById("frameDebugCanvas"),
+        label: document.getElementById("frameDebugLabel"),
+      };
+    }
+
+    function setFrameDebugPanelVisible(on) {
+      const { panel } = getFrameDebugEls();
+      if (!panel) return;
+      panel.classList.toggle("is-on", !!on);
+      panel.setAttribute("aria-hidden", on ? "false" : "true");
+    }
+
+    let textHintShowPendingSince = 0;
+    let textHintHidePendingSince = 0;
+    let textHintHoldUntil = 0;
+    let textDetectPreviewLogWant = null;
+    let textDetectPreviewLogAt = 0;
+    let ocrWorkerPromise = null;
+    let ocrWorkerHardFail = false;
+
+    function logTextDetect(stage, payload) {
+      if (!TEXT_DETECT_DEBUG) return;
+      const row = Object.assign({ stage, t: new Date().toISOString() }, payload);
+      console.info("[CameraIntent/TextDetect]", row);
+    }
+
+    function resetTextHintBubbleDebounce() {
+      textHintShowPendingSince = 0;
+      textHintHidePendingSince = 0;
+      textHintHoldUntil = 0;
+    }
+
+    function tickTextHintBubble(wantShow, meta) {
+      const now = performance.now();
+      const visible = textHintBar && textHintBar.classList.contains("is-visible");
+      if (
+        TEXT_DETECT_DEBUG &&
+        (wantShow !== textDetectPreviewLogWant || now - textDetectPreviewLogAt >= 2500)
+      ) {
+        textDetectPreviewLogWant = wantShow;
+        textDetectPreviewLogAt = now;
+        logTextDetect("preview", meta);
+      }
+
+      if (wantShow) {
+        textHintHoldUntil = now + TEXT_HINT_HOLD_MS;
+        textHintHidePendingSince = 0;
+        if (!visible) {
+          if (HINT_DEBOUNCE_SHOW_MS <= 0) {
+            setTextHintBarVisible(true);
+            textHintShowPendingSince = 0;
+          } else {
+            if (!textHintShowPendingSince) textHintShowPendingSince = now;
+            if (now - textHintShowPendingSince >= HINT_DEBOUNCE_SHOW_MS) {
+              setTextHintBarVisible(true);
+              textHintShowPendingSince = 0;
+            }
+          }
+        } else {
+          textHintShowPendingSince = 0;
+        }
+        return;
+      }
+
+      if (visible && now < textHintHoldUntil) {
+        return;
+      }
+
+      textHintShowPendingSince = 0;
+      if (visible) {
+        if (!textHintHidePendingSince) textHintHidePendingSince = now;
+        if (now - textHintHidePendingSince >= HINT_DEBOUNCE_HIDE_MS) {
+          setTextHintBarVisible(false);
+          textHintHidePendingSince = 0;
+        }
+      } else {
+        textHintHidePendingSince = 0;
+      }
+    }
 
     function isPhotoMode() {
       const a = cameraModesRoot && cameraModesRoot.querySelector(".mode-item.active");
@@ -1726,6 +1906,15 @@ Return ONLY valid JSON (no markdown fences):
 {
   "extractedText": string,
   "hasMeaningfulText": boolean,
+  "textDetectionConfidence": number,
+  "writingStyle": "printed" | "handwritten" | "mixed" | "unknown",
+  "textRegions": [
+    {
+      "text": string,
+      "confidence": number,
+      "box": { "x0": number, "y0": number, "x1": number, "y1": number }
+    }
+  ],
   "structured": {
     "title": string,
     "dateOrTime": string,
@@ -1735,13 +1924,16 @@ Return ONLY valid JSON (no markdown fences):
 }
 
 Rules:
-- extractedText: full visible printed/handwritten text, or "" if none.
+- extractedText: full visible printed AND handwritten text (notes, whiteboards, screens, documents), or "" if none.
 - hasMeaningfulText: true only if there is enough readable text to be useful (about a short phrase or more).
+- textDetectionConfidence: your confidence 0–1 that meaningful text is present and legible (printed or handwritten). Use values below 0.45 only when text is absent or illegible.
+- writingStyle: best guess from the frame.
+- textRegions: 1–12 entries, one per distinct text block/line cluster (OCR-style boxes). Each box uses normalized 0–1000 coordinates: (0,0) top-left, (1000,1000) bottom-right; x0,y0 top-left, x1,y1 bottom-right. Per-region confidence 0–1 (omit 0.5 if unsure). Omit or use [] if no text.
 - structured.title: short heading if obvious, else "".
 - structured.dateOrTime: any calendar date or clock time visible, compact human-readable string, else "".
 - structured.hasListStructure: true if content is clearly a bullet/numbered/checklist style list.
 - structured.location: venue, address, room, or place name if obvious, else "".
-- If no meaningful text: extractedText "", hasMeaningfulText false, and use "", false, "" for structured fields.`;
+- If no meaningful text: extractedText "", hasMeaningfulText false, textRegions [], and use "", false, "" for structured fields.`;
 
       const body = {
         contents: [
@@ -1771,8 +1963,23 @@ Rules:
         data.candidates[0].content.parts[0];
       const txt = part && part.text ? part.text : "";
       const parsed = parseJsonFromModel(txt);
-      if (!parsed || typeof parsed.hasMeaningfulText !== "boolean") {
+      if (!parsed || typeof parsed.extractedText !== "string") {
         throw new Error("Invalid Gemini response");
+      }
+      if (typeof parsed.hasMeaningfulText !== "boolean") {
+        parsed.hasMeaningfulText = parsed.extractedText.replace(/\|/g, "I").trim().length >= MIN_TEXT_LEN;
+      }
+      if (!Array.isArray(parsed.textRegions)) parsed.textRegions = [];
+      let tdc = Number(parsed.textDetectionConfidence);
+      if (!Number.isFinite(tdc)) tdc = NaN;
+      if (!Number.isFinite(tdc) || tdc < 0 || tdc > 1) {
+        const tl = parsed.extractedText.replace(/\|/g, "I").trim().length;
+        tdc = tl >= MIN_TEXT_LEN ? 0.72 : tl > 0 ? 0.35 : 0.12;
+      }
+      parsed.textDetectionConfidence = Math.max(0, Math.min(1, tdc));
+      const ws = parsed.writingStyle;
+      if (ws !== "printed" && ws !== "handwritten" && ws !== "mixed" && ws !== "unknown") {
+        parsed.writingStyle = "unknown";
       }
       return parsed;
     }
@@ -1903,7 +2110,6 @@ Rules:
       const s = parsed && parsed.structured && typeof parsed.structured === "object" ? parsed.structured : {};
       const hasList = s.hasListStructure === true || detectListStructureHeuristic(clean);
       const hasDt = hasDateTimeSignal(s, clean);
-      const locQuery = resolveLocationQuery(s, clean);
 
       INTENT_PILL_BUTTONS.forEach((b) => {
         b.classList.add("hidden");
@@ -1911,25 +2117,21 @@ Rules:
       });
 
       btnCopyText.classList.remove("hidden");
-      setIntentPillLabel(btnCopyText, "Copy text");
-      btnNote.classList.remove("hidden");
-      setIntentPillLabel(btnNote, "Save note");
+      setIntentPillLabel(btnCopyText, "Copy Text");
 
       if (hasDt) {
         btnEvent.classList.remove("hidden");
-        setIntentPillLabel(btnEvent, "Add to calendar");
+        setIntentPillLabel(btnEvent, "Add to Calendar");
+        btnTask.classList.remove("hidden");
+        btnTask.classList.add("dark");
+        setIntentPillLabel(btnTask, "Create task");
       }
       if (hasList) {
         btnTodoList.classList.remove("hidden");
-        setIntentPillLabel(btnTodoList, "Create checklist");
+        setIntentPillLabel(btnTodoList, "Create List");
       }
-      if (locQuery) {
-        btnOpenMaps.classList.remove("hidden");
-        setIntentPillLabel(btnOpenMaps, "Open in maps");
-        lastMapsQuery = locQuery;
-      } else {
-        lastMapsQuery = "";
-      }
+
+      lastMapsQuery = "";
     }
 
     function guessTitle(text) {
@@ -1948,6 +2150,10 @@ Rules:
       const parts = [];
       const monthDay = t.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?/i);
       if (monthDay) parts.push(monthDay[0].trim());
+      const dayMonth = t.match(/\b\d{1,2}(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:\s+\d{4})?/i);
+      if (dayMonth && !parts.length) parts.push(dayMonth[0].trim());
+      const iso = t.match(/\b\d{4}-\d{2}-\d{2}\b/);
+      if (iso) parts.push(iso[0]);
       const slash = t.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/);
       if (slash && !parts.some((p) => p.includes(slash[0]))) parts.push(slash[0]);
       const time12 = t.match(/\b\d{1,2}:\d{2}\s*(?:am|pm)\b/i);
@@ -1984,16 +2190,50 @@ Rules:
       return { title, when, location, confidence: Math.min(confidence, 1) };
     }
 
+    function onVideoStreamFormat() {
+      console.info("[CameraIntent/Frame] video format", {
+        readyState: video.readyState,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+      });
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+    }
+
     async function startCamera() {
       if (stream) stream.getTracks().forEach((t) => t.stop());
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
+      video.removeEventListener("loadedmetadata", onVideoStreamFormat);
+      video.removeEventListener("resize", onVideoStreamFormat);
+      video.addEventListener("loadedmetadata", onVideoStreamFormat);
+      video.addEventListener("resize", onVideoStreamFormat);
       video.srcObject = stream;
       await video.play();
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      let waits = 0;
+      while ((video.videoWidth < 2 || video.videoHeight < 2) && waits < 60) {
+        await new Promise((r) => requestAnimationFrame(r));
+        waits++;
+      }
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      console.info("[CameraIntent/Frame] startCamera", {
+        readyState: video.readyState,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        rafWaits: waits,
+      });
+      if (video.videoWidth < 2 || video.readyState < VIDEO_READYSTATE_MIN) {
+        console.warn(
+          "[CameraIntent/Frame] Video dimensions or readyState still low after play — preview OCR may skip until metadata arrives."
+        );
+      }
     }
 
     function triggerShutterFlash() {}
@@ -2006,6 +2246,48 @@ Rules:
 
     function clampNorm(n) {
       return Math.max(0, Math.min(1000, Number(n) || 0));
+    }
+
+    function normalizeGeminiTextRegions(parsed) {
+      const raw = parsed && Array.isArray(parsed.textRegions) ? parsed.textRegions : [];
+      const out = [];
+      for (const r of raw.slice(0, 12)) {
+        if (!r || typeof r !== "object") continue;
+        const box = r.box && typeof r.box === "object" ? r.box : r;
+        if (!box || typeof box !== "object") continue;
+        const x0 = clampNorm(box.x0 ?? box.xmin ?? box.left);
+        const y0 = clampNorm(box.y0 ?? box.ymin ?? box.top);
+        const x1 = clampNorm(box.x1 ?? box.xmax ?? box.right ?? x0 + 48);
+        const y1 = clampNorm(box.y1 ?? box.ymax ?? box.bottom ?? y0 + 36);
+        if (x1 <= x0 + 3 || y1 <= y0 + 3) continue;
+        out.push({ x0, y0, x1, y1 });
+      }
+      return out;
+    }
+
+    function regionsForHighlight(parsed, fallbackText) {
+      const fromModel = normalizeGeminiTextRegions(parsed);
+      if (fromModel.length) return fromModel;
+      return syntheticRegionsFromText(fallbackText);
+    }
+
+    function summarizeGeminiTextDetect(parsed) {
+      const raw = parsed && Array.isArray(parsed.textRegions) ? parsed.textRegions : [];
+      return {
+        pipeline: "gemini_multimodal",
+        path: "POST /analyze",
+        modelNote: "Server tries gemini-2.0-flash then 1.5 fallbacks (see server.js).",
+        textDetectionConfidence: parsed.textDetectionConfidence,
+        writingStyle: parsed.writingStyle,
+        hasMeaningfulText: parsed.hasMeaningfulText,
+        textLength: (parsed.extractedText || "").replace(/\|/g, "I").trim().length,
+        regionCount: raw.length,
+        regions: raw.slice(0, 14).map((r) => ({
+          snippet: (r && r.text ? String(r.text) : "").slice(0, 100),
+          confidence: typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : null,
+          box: r && r.box && typeof r.box === "object" ? r.box : null,
+        })),
+      };
     }
 
     function syntheticRegionsFromText(text) {
@@ -2061,8 +2343,7 @@ Rules:
     function showExaminationResultShell() {
       examinationUIActive = true;
       if (textHintBar) {
-        textHintBar.classList.remove("is-visible", "is-examining");
-        textHintBar.setAttribute("aria-hidden", "true");
+        textHintBar.classList.remove("is-examining");
       }
       if (textHintIcon) textHintIcon.classList.remove("is-armed");
       if (quickSuggestLayer) quickSuggestLayer.classList.remove("is-visible");
@@ -2076,10 +2357,9 @@ Rules:
       if (textHintIcon) textHintIcon.classList.remove("is-armed");
       examinationUIActive = false;
       hintExamineBusy = false;
-      previewHintPositiveStreak = 0;
-      previewHintNegativeStreak = 0;
+      resetTextHintBubbleDebounce();
       showIntents(false);
-      window.setTimeout(() => pollPreviewTextHeuristic(), 400);
+      window.setTimeout(() => pollPreviewTextDetection().catch((e) => console.warn(e)), 400);
     }
 
     function setTextHintBarVisible(show) {
@@ -2087,7 +2367,6 @@ Rules:
       if (
         show &&
         isPhotoMode() &&
-        !examinationUIActive &&
         !hintExamineBusy &&
         !backdrop.classList.contains("open") &&
         !settingsBackdrop.classList.contains("open")
@@ -2095,6 +2374,7 @@ Rules:
         textHintBar.classList.add("is-visible");
         textHintBar.setAttribute("aria-hidden", "false");
       } else {
+        textHintHoldUntil = 0;
         textHintBar.classList.remove("is-visible", "is-examining");
         textHintBar.setAttribute("aria-hidden", "true");
         if (!examinationUIActive && textHintIcon) textHintIcon.classList.remove("is-armed");
@@ -2109,103 +2389,781 @@ Rules:
       return { pc: previewCanvas, pctx: previewCtx };
     }
 
-    function previewFrameLikelyTextRegion(w, h, data) {
-      function lum(i) {
-        return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    function previewFrameTextSignals(w, h, data) {
+      function lum(ii) {
+        return 0.299 * data[ii] + 0.587 * data[ii + 1] + 0.114 * data[ii + 2];
       }
-      const x0 = Math.floor(w * 0.18);
-      const x1 = Math.ceil(w * 0.82);
-      const y0 = Math.floor(h * 0.2);
-      const y1 = Math.ceil(h * 0.8);
+      const idx = (x, y) => (y * w + x) * 4;
+
+      const roiX0 = Math.floor(w * 0.08);
+      const roiX1 = Math.ceil(w * 0.92);
+      const roiY0 = Math.floor(h * 0.1);
+      const roiY1 = Math.ceil(h * 0.9);
+
       let edge = 0;
       let nEdge = 0;
       let sum = 0;
       let sumSq = 0;
       let nPix = 0;
-      for (let y = y0; y < y1; y++) {
-        for (let x = x0; x < x1; x++) {
-          const i = (y * w + x) * 4;
+      let hGrad = 0;
+      let vGrad = 0;
+      let nGrad = 0;
+
+      for (let y = roiY0; y < roiY1; y++) {
+        for (let x = roiX0; x < roiX1; x++) {
+          const i = idx(x, y);
           const L = lum(i);
           sum += L;
           sumSq += L * L;
           nPix++;
-          if (x < x1 - 1) {
-            edge += Math.abs(L - lum(i + 4));
+          if (x < roiX1 - 1) {
+            const dh = Math.abs(L - lum(idx(x + 1, y)));
+            edge += dh;
             nEdge++;
+            hGrad += dh;
+            nGrad++;
           }
-          if (y < y1 - 1) {
-            const j = ((y + 1) * w + x) * 4;
-            edge += Math.abs(L - lum(j));
+          if (y < roiY1 - 1) {
+            const dv = Math.abs(L - lum(idx(x, y + 1)));
+            edge += dv;
             nEdge++;
+            vGrad += dv;
+            nGrad++;
           }
         }
       }
-      if (nPix < 8 || nEdge < 1) return { likely: false, avgEdge: 0, contrast: 0 };
+
+      if (nPix < 32 || nEdge < 4) {
+        return {
+          avgEdge: 0,
+          contrast: 0,
+          textyFraction: 0,
+          rowSpikeRatio: 0,
+          horizBias: 1,
+          notBlank: false,
+          edgePlausible: false,
+          softTextCue: false,
+          structuredDocCue: false,
+          weakSceneCue: false,
+          confidence: 0,
+          textAreaCoverage: 0,
+          wantShow: false,
+        };
+      }
+
       const mean = sum / nPix;
       const variance = Math.max(0, sumSq / nPix - mean * mean);
       const contrast = Math.sqrt(variance);
       const avgEdge = edge / nEdge;
-      const likely = avgEdge > 11 && avgEdge < 64 && contrast > 17 && contrast < 98;
-      return { likely, avgEdge, contrast };
+      const horizBias = nGrad ? hGrad / (vGrad + 1e-6) : 1;
+
+      const rowVars = [];
+      for (let y = roiY0; y < roiY1; y++) {
+        let rs = 0;
+        let rs2 = 0;
+        const rn = roiX1 - roiX0;
+        for (let x = roiX0; x < roiX1; x++) {
+          const L = lum(idx(x, y));
+          rs += L;
+          rs2 += L * L;
+        }
+        const m = rs / rn;
+        rowVars.push(Math.max(0, rs2 / rn - m * m));
+      }
+      rowVars.sort((a, b) => a - b);
+      const medVar = rowVars[Math.floor(rowVars.length * 0.5)] || 0;
+      const spikeRows = rowVars.filter((v) => v > Math.max(85, medVar * 1.82)).length;
+      const rowSpikeRatio = rowVars.length ? spikeRows / rowVars.length : 0;
+
+      const cols = 10;
+      const rows = 8;
+      const cellW = (roiX1 - roiX0) / cols;
+      const cellH = (roiY1 - roiY0) / rows;
+      let textyBlocks = 0;
+      let totalBlocks = 0;
+      const step = 2;
+
+      for (let br = 0; br < rows; br++) {
+        for (let bc = 0; bc < cols; bc++) {
+          const cx0 = Math.floor(roiX0 + bc * cellW);
+          const cx1 = Math.floor(roiX0 + (bc + 1) * cellW);
+          const cy0 = Math.floor(roiY0 + br * cellH);
+          const cy1 = Math.floor(roiY0 + (br + 1) * cellH);
+          if (cx1 <= cx0 + 4 || cy1 <= cy0 + 4) continue;
+          totalBlocks++;
+
+          let s = 0;
+          let s2 = 0;
+          let n = 0;
+          let bH = 0;
+          let bV = 0;
+          let nB = 0;
+          for (let y = cy0; y < cy1 - step; y += step) {
+            for (let x = cx0; x < cx1 - step; x += step) {
+              const L0 = lum(idx(x, y));
+              s += L0;
+              s2 += L0 * L0;
+              n++;
+              bH += Math.abs(L0 - lum(idx(x + step, y)));
+              bV += Math.abs(L0 - lum(idx(x, y + step)));
+              nB++;
+            }
+          }
+          if (n < 8 || nB < 6) continue;
+          const m = s / n;
+          const v = Math.max(0, s2 / n - m * m);
+          const ah = bH / nB;
+          const av = bV / nB;
+          const ratio = ah / (av + 1e-3);
+          const printedTexty =
+            v > 12 &&
+            v < 2800 &&
+            ah > 1.75 &&
+            ratio > 0.95 &&
+            m > 8 &&
+            m < 254;
+          const handwrittenTexty =
+            v > 16 &&
+            v < 3800 &&
+            ah > 1.35 &&
+            av > 1.2 &&
+            m > 6 &&
+            m < 254 &&
+            ah + av > 2.9 &&
+            ratio > 0.72 &&
+            ratio < 2.75;
+          if (printedTexty || handwrittenTexty) textyBlocks++;
+        }
+      }
+
+      const textyFraction = totalBlocks ? textyBlocks / totalBlocks : 0;
+      const textAreaCoverage = textyFraction;
+      const notBlank = contrast > 5.5 && contrast < 142;
+      const edgePlausible = avgEdge > 4.3 && avgEdge < 90;
+
+      function clamp01(x) {
+        return Math.max(0, Math.min(1, x));
+      }
+      const cTf = clamp01((textyFraction - 0.020) / 0.40);
+      const cRow = clamp01((rowSpikeRatio - 0.010) / 0.105);
+      const cHoriz = clamp01((horizBias - 0.96) / 0.17);
+      const cEdge =
+        avgEdge > 5.5 && avgEdge < 76
+          ? Math.min(clamp01((avgEdge - 4.8) / 29), clamp01((78 - avgEdge) / 28))
+          : 0;
+      const cCon =
+        contrast > 6.5 && contrast < 125
+          ? Math.min(clamp01((contrast - 5) / 44), clamp01((128 - contrast) / 34))
+          : 0;
+      let confidence = 0.25 * cTf + 0.22 * cRow + 0.09 * cHoriz + 0.21 * cEdge + 0.23 * cCon;
+      if (notBlank && edgePlausible) confidence = Math.min(1, confidence + 0.06);
+      const softTextCue =
+        notBlank && edgePlausible && (rowSpikeRatio >= 0.017 || textyFraction >= 0.014);
+      const structuredDocCue =
+        rowSpikeRatio >= 0.024 &&
+        textyFraction >= 0.01 &&
+        contrast > 5.5 &&
+        contrast < 142 &&
+        avgEdge > 4 &&
+        avgEdge < 92;
+      const weakSceneCue =
+        (rowSpikeRatio >= 0.011 || textyFraction >= 0.009) &&
+        contrast > 4.5 &&
+        contrast < 155 &&
+        avgEdge > 3.2 &&
+        avgEdge < 98;
+      const wantShow = softTextCue || structuredDocCue || weakSceneCue;
+
+      return {
+        avgEdge,
+        contrast,
+        textyFraction,
+        rowSpikeRatio,
+        horizBias,
+        notBlank,
+        edgePlausible,
+        softTextCue,
+        structuredDocCue,
+        weakSceneCue,
+        confidence,
+        textAreaCoverage,
+        wantShow,
+      };
     }
 
-    function previewNoTextSignal(likely, avgEdge, contrast, hintBarVisible) {
-      if (!likely) return true;
-      if (!hintBarVisible) return false;
-      if (avgEdge < 9.5 || contrast < 15) return true;
-      if (avgEdge > 66 || contrast > 96) return true;
+    function resolvePublicUrl(relPath) {
+      if (typeof location === "undefined" || !location.href) return relPath;
+      if (location.protocol === "file:") {
+        console.error(
+          "[CameraIntent/OCR] file:// will not load workers/WASM. Run: npm start → http://localhost:3000/"
+        );
+      }
+      try {
+        return new URL(relPath, location.href).href;
+      } catch {
+        return relPath;
+      }
+    }
+
+    async function verifyOcrAssetUrls() {
+      const paths = [
+        "/vendor/tesseract/tesseract.min.js",
+        "/vendor/tesseract/worker.min.js",
+        "/vendor/tesseract-core/tesseract-core-simd-lstm.wasm.js",
+        "/test-ocr.png",
+      ];
+      for (const p of paths) {
+        try {
+          const url = resolvePublicUrl(p);
+          const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+          console.info("[CameraIntent/OCR] asset HEAD", p, "→", r.status, r.ok ? "OK" : "FAIL");
+        } catch (e) {
+          console.error("[CameraIntent/OCR] asset HEAD", p, "→ fetch error:", e && e.message ? e.message : e);
+        }
+      }
+    }
+
+    async function runOcrCanvasSelfTest(worker) {
+      if (!worker) return;
+      console.info("[CameraIntent/OCR] ocrTest: start (synthetic canvas, text “OCR TEST”)");
+      const c = document.createElement("canvas");
+      c.width = 320;
+      c.height = 100;
+      const g = c.getContext("2d");
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = "#111111";
+      g.font = "bold 42px system-ui, sans-serif";
+      g.fillText("OCR TEST", 16, 68);
+      const t0 = performance.now();
+      try {
+        const { data } = await worker.recognize(
+          c,
+          {},
+          { text: true, blocks: true, hocr: false, tsv: false, box: false, unlv: false, osd: false }
+        );
+        console.info("[CameraIntent/OCR] ocrTest: end", {
+          ms: Math.round(performance.now() - t0),
+          dataText: (data.text || "").trim(),
+          dataConfidence: data.confidence,
+        });
+      } catch (e) {
+        console.error("[CameraIntent/OCR] ocrTest: fail (environment / worker issue)", e);
+      }
+    }
+
+    async function runOcrStaticImageTest(worker, relPath) {
+      if (!worker || !relPath) return;
+      const url = resolvePublicUrl(relPath);
+      console.info("[CameraIntent/OCR] ocrStaticTest: start", url);
+      const t0 = performance.now();
+      try {
+        const { data } = await worker.recognize(
+          url,
+          {},
+          { text: true, blocks: true, hocr: false, tsv: false, box: false, unlv: false, osd: false }
+        );
+        console.info("[CameraIntent/OCR] ocrStaticTest: end", {
+          ms: Math.round(performance.now() - t0),
+          dataText: (data.text || "").trim(),
+          dataConfidence: data.confidence,
+        });
+      } catch (e) {
+        console.error("[CameraIntent/OCR] ocrStaticTest: fail", e);
+      }
+    }
+
+    function analyzeImageDataLuma(imgData) {
+      const W = imgData.width;
+      const H = imgData.height;
+      const d = imgData.data;
+      if (!W || !H) {
+        return { error: "zero image size", W, H, lumaMean: -1, note: "empty size" };
+      }
+      const step = Math.max(1, Math.floor(Math.max(W, H) / 96));
+      let min = 255;
+      let max = 0;
+      let sum = 0;
+      let n = 0;
+      for (let y = 0; y < H; y += step) {
+        for (let x = 0; x < W; x += step) {
+          const yi = Math.min(H - 1, Math.floor(y));
+          const xi = Math.min(W - 1, Math.floor(x));
+          const i = (yi * W + xi) * 4;
+          const L = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          if (L < min) min = L;
+          if (L > max) max = L;
+          sum += L;
+          n++;
+        }
+      }
+      const mean = n ? sum / n : 0;
+      const range = max - min;
+      let note = "ok";
+      if (mean < 2 && range < 4) note = "flat black / empty frame";
+      else if (mean > 252 && range < 6) note = "flat white / blowout";
+      else if (range < 2) note = "very low contrast";
+      return {
+        W,
+        H,
+        sampleStep: step,
+        samples: n,
+        lumaMin: Math.round(min * 10) / 10,
+        lumaMax: Math.round(max * 10) / 10,
+        lumaMean: Math.round(mean * 10) / 10,
+        lumaRange: Math.round(range * 10) / 10,
+        note,
+      };
+    }
+
+    function analyzePreviewCanvasLuma(pc, pctx) {
+      const W = pc.width;
+      const H = pc.height;
+      if (!W || !H) {
+        return { error: "zero canvas size", W, H, lumaMean: -1, note: "empty size" };
+      }
+      try {
+        const imgData = pctx.getImageData(0, 0, W, H);
+        return analyzeImageDataLuma(imgData);
+      } catch (e) {
+        return {
+          error: String(e && e.message ? e.message : e),
+          W,
+          H,
+          lumaMean: -1,
+          note: "getImageData failed",
+        };
+      }
+    }
+
+    function otsuThresholdFromGray(gray, len) {
+      const hist = new Uint32Array(256);
+      for (let i = 0; i < len; i++) hist[gray[i]]++;
+      const total = len;
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i * hist[i];
+      let sumB = 0;
+      let wB = 0;
+      let maxBetween = 0;
+      let threshold = 127;
+      for (let t = 0; t < 256; t++) {
+        wB += hist[t];
+        if (wB === 0) continue;
+        const wF = total - wB;
+        if (wF === 0) break;
+        sumB += t * hist[t];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+        const between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > maxBetween) {
+          maxBetween = between;
+          threshold = t;
+        }
+      }
+      return threshold;
+    }
+
+    function binarizeImageDataForOcr(imgData) {
+      const d = imgData.data;
+      const w = imgData.width;
+      const h = imgData.height;
+      const n = w * h;
+      if (n < 1) return;
+      const gray = new Uint8Array(n);
+      for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+        gray[j] = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+      }
+      let t = otsuThresholdFromGray(gray, n);
+      if (!Number.isFinite(t)) t = 127;
+      let sLo = 0,
+        cLo = 0,
+        sHi = 0,
+        cHi = 0;
+      for (let j = 0; j < n; j++) {
+        if (gray[j] <= t) {
+          sLo += gray[j];
+          cLo++;
+        } else {
+          sHi += gray[j];
+          cHi++;
+        }
+      }
+      const mLo = cLo ? sLo / cLo : 0;
+      const mHi = cHi ? sHi / cHi : 255;
+      const inkOnLowSide = mLo < mHi;
+      for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+        const low = gray[j] <= t;
+        const isInk = inkOnLowSide ? low : !low;
+        const v = isInk ? 0 : 255;
+        d[i] = v;
+        d[i + 1] = v;
+        d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+    }
+
+    function paintFrameDebugFromPreviewCanvas(pc) {
+      const { dCanvas } = getFrameDebugEls();
+      if (!dCanvas || !pc || !pc.width) return;
+      const sw = pc.width;
+      const sh = pc.height;
+      const aspect = sw / sh;
+      const dw = 240;
+      const dh = Math.max(1, Math.round(dw / aspect));
+      dCanvas.width = dw;
+      dCanvas.height = dh;
+      const dctx = dCanvas.getContext("2d");
+      dctx.fillStyle = "#1a1a1e";
+      dctx.fillRect(0, 0, dw, dh);
+      dctx.imageSmoothingEnabled = false;
+      dctx.drawImage(pc, 0, 0, sw, sh, 0, 0, dw, dh);
+    }
+
+    function updateFrameDebugUI(pc, luma, videoSnap) {
+      if (!frameDebugEnabled()) return;
+      setFrameDebugPanelVisible(true);
+      const { label } = getFrameDebugEls();
+      if (pc && pc.width) paintFrameDebugFromPreviewCanvas(pc);
+      const lines = [
+        "v: rs=" + videoSnap.readyState + " (need≥" + VIDEO_READYSTATE_MIN + ")",
+        "v: " + videoSnap.videoWidth + "×" + videoSnap.videoHeight + " paused=" + (videoSnap.paused ? "y" : "n"),
+        "OCR canvas: " + (luma.W || "?") + "×" + (luma.H || "?"),
+        "luma μ=" +
+          (luma.lumaMean != null ? luma.lumaMean : "?") +
+          " [" +
+          (luma.lumaMin != null ? luma.lumaMin : "?") +
+          "–" +
+          (luma.lumaMax != null ? luma.lumaMax : "?") +
+          "] Δ=" +
+          (luma.lumaRange != null ? luma.lumaRange : "?"),
+        (luma.note || "") + (luma.error ? " | " + luma.error : ""),
+      ];
+      if (label) label.textContent = lines.join("\n");
+    }
+
+    function getOcrWorker() {
+      if (ocrWorkerHardFail) return Promise.resolve(null);
+      if (typeof Tesseract === "undefined") {
+        ocrWorkerHardFail = true;
+        console.error(
+          "[CameraIntent/OCR] createWorker:fail — Tesseract global missing. Expected script: /vendor/tesseract/tesseract.min.js (200 from server)"
+        );
+        return Promise.resolve(null);
+      }
+      if (ocrWorkerPromise) return ocrWorkerPromise;
+
+      ocrWorkerPromise = (async () => {
+        const workerPath = resolvePublicUrl("/vendor/tesseract/worker.min.js");
+        /** Directory only — worker script appends tesseract-core-simd-lstm.wasm.js (do not pass a truncated .wasm URL). */
+        const corePath = resolvePublicUrl("/vendor/tesseract-core/");
+        /** Omit langPath — Tesseract.js fetches eng.traineddata.gz from its default CDN (local /vendor path only had uncompressed .traineddata → 404 on .gz). */
+        const opts = {
+          workerPath,
+          corePath,
+          logger: ocrLogVerbose() ? (m) => console.debug("[Tesseract worker]", m) : () => {},
+        };
+        console.info("[CameraIntent/OCR] createWorker:start", {
+          workerPath: opts.workerPath,
+          corePath: opts.corePath,
+          coreFileExpected: opts.corePath.replace(/\/?$/, "/") + "tesseract-core-simd-lstm.wasm.js",
+          lang: "eng (default CDN .traineddata.gz)",
+          loggerMode: ocrLogVerbose() ? "verbose" : "silent",
+        });
+        try {
+          const worker = await Tesseract.createWorker("eng", 1, opts);
+          await worker.setParameters({
+            tessedit_pageseg_mode: "3",
+          });
+          console.info("[CameraIntent/OCR] createWorker:success", { psm: "3 (AUTO — printed labels, notes, mixed scenes)" });
+          return worker;
+        } catch (err) {
+          console.error("[CameraIntent/OCR] createWorker:fail", err);
+          ocrWorkerHardFail = true;
+          ocrWorkerPromise = null;
+          return null;
+        }
+      })();
+
+      return ocrWorkerPromise;
+    }
+
+    function ocrConfidence01(data) {
+      if (!data) return NaN;
+      const top = typeof data.confidence === "number" ? data.confidence : NaN;
+      if (Number.isFinite(top) && top >= 0 && top <= 100) return top / 100;
+
+      const vals = [];
+      const blocks = data.blocks || [];
+      for (const b of blocks) {
+        if (typeof b.confidence === "number" && b.confidence >= 0 && b.confidence <= 100) vals.push(b.confidence);
+        for (const p of b.paragraphs || []) {
+          for (const line of p.lines || []) {
+            if (typeof line.confidence === "number" && line.confidence >= 0 && line.confidence <= 100) {
+              vals.push(line.confidence);
+            }
+            for (const w of line.words || []) {
+              if (typeof w.confidence === "number" && w.confidence >= 0 && w.confidence <= 100) {
+                vals.push(w.confidence);
+              }
+            }
+          }
+        }
+      }
+      if (!vals.length) return NaN;
+      return vals.reduce((a, b) => a + b, 0) / vals.length / 100;
+    }
+
+    function ocrNonWhitespaceLen(s) {
+      return (s || "").replace(/\s/g, "").length;
+    }
+
+    function previewOcrGlyphSignal(rawText, data) {
+      if (ocrNonWhitespaceLen(rawText) >= 1) return true;
+      if (!data || !Array.isArray(data.blocks)) return false;
+      for (const b of data.blocks) {
+        if (ocrNonWhitespaceLen(b && b.text) >= 1) return true;
+        for (const p of b.paragraphs || []) {
+          if (ocrNonWhitespaceLen(p.text) >= 1) return true;
+          for (const line of p.lines || []) {
+            if (ocrNonWhitespaceLen(line.text) >= 1) return true;
+            for (const w of line.words || []) {
+              if (ocrNonWhitespaceLen(w.text) >= 1) return true;
+            }
+          }
+        }
+      }
       return false;
     }
 
-    function pollPreviewTextHeuristic() {
+    function previewHeuristicTextCues(w, h, imageData) {
+      const sig = previewFrameTextSignals(w, h, imageData);
+      return {
+        softTextCue: !!sig.softTextCue,
+        structuredDocCue: !!sig.structuredDocCue,
+        weakSceneCue: !!sig.weakSceneCue,
+      };
+    }
+
+    function previewHeuristicLooksLikeText(w, h, imageData) {
+      const sig = previewFrameTextSignals(w, h, imageData);
+      return !!(sig.softTextCue || sig.structuredDocCue || sig.weakSceneCue);
+    }
+
+    function previewAlnumCount(str) {
+      return (str || "").replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, "").length;
+    }
+
+    async function pollPreviewTextDetection() {
       if (!isPhotoMode()) {
         setTextHintBarVisible(false);
-        previewHintPositiveStreak = 0;
-        previewHintNegativeStreak = 0;
+        resetTextHintBubbleDebounce();
         return;
       }
       if (examinationUIActive || hintExamineBusy) return;
       if (backdrop.classList.contains("open") || settingsBackdrop.classList.contains("open")) return;
-      if (!video.videoWidth || previewPollBusy) return;
+      if (previewPollBusy) return;
+
+      const vrs = video.readyState;
+      const vw0 = video.videoWidth;
+      const vh0 = video.videoHeight;
+      const videoSnap = {
+        readyState: vrs,
+        videoWidth: vw0,
+        videoHeight: vh0,
+        paused: !!video.paused,
+      };
+
+      if (vrs < VIDEO_READYSTATE_MIN || vw0 < 2 || vh0 < 2) {
+        console.warn("[CameraIntent/Frame] skip poll — video not ready for drawImage", {
+          ...videoSnap,
+          needReadyState: ">= " + VIDEO_READYSTATE_MIN,
+          needDimensions: ">= 2×2",
+        });
+        if (frameDebugEnabled()) {
+          setFrameDebugPanelVisible(true);
+          const { dCanvas, label } = getFrameDebugEls();
+          if (dCanvas) {
+            const dc = dCanvas.getContext("2d");
+            dCanvas.width = 240;
+            dCanvas.height = 80;
+            dc.fillStyle = "#4a1525";
+            dc.fillRect(0, 0, dCanvas.width, dCanvas.height);
+            dc.fillStyle = "#fff";
+            dc.font = "12px monospace";
+            dc.fillText("No video frame", 8, 24);
+            dc.fillText("rs=" + vrs + " need>=" + VIDEO_READYSTATE_MIN, 8, 44);
+            dc.fillText(vw0 + "×" + vh0, 8, 64);
+          }
+          if (label) {
+            label.textContent =
+              "SKIP drawImage\nrs=" +
+              vrs +
+              " (need≥" +
+              VIDEO_READYSTATE_MIN +
+              ")\n" +
+              vw0 +
+              "×" +
+              vh0 +
+              "\npaused=" +
+              (video.paused ? "yes" : "no");
+          }
+        }
+        return;
+      }
 
       previewPollBusy = true;
       try {
+        const worker = await getOcrWorker();
         const { pc, pctx } = getPreviewDrawContext();
         const vw = video.videoWidth;
         const vh = video.videoHeight;
-        const w = 128;
+        const w = Math.min(OCR_PREVIEW_MAX_WIDTH, Math.max(64, vw));
         const h = Math.max(1, Math.round(vh * (w / vw)));
         pc.width = w;
         pc.height = h;
         pctx.drawImage(video, 0, 0, vw, vh, 0, 0, w, h);
-        const img = pctx.getImageData(0, 0, w, h);
-        const { likely, avgEdge, contrast } = previewFrameLikelyTextRegion(w, h, img.data);
-        const hintOn = textHintBar && textHintBar.classList.contains("is-visible");
-        const noText = previewNoTextSignal(likely, avgEdge, contrast, hintOn);
-
-        if (!noText) {
-          previewHintPositiveStreak += 1;
-          previewHintNegativeStreak = 0;
-          if (previewHintPositiveStreak >= PREVIEW_HINT_ON_STREAK) {
-            setTextHintBarVisible(true);
-          }
-        } else {
-          previewHintNegativeStreak += 1;
-          previewHintPositiveStreak = 0;
-          if (previewHintNegativeStreak >= PREVIEW_HINT_OFF_STREAK) {
-            setTextHintBarVisible(false);
-          }
+        let rawImg;
+        try {
+          rawImg = pctx.getImageData(0, 0, w, h);
+        } catch (pixErr) {
+          console.warn("[CameraIntent/OCR] getImageData (preview frame):", pixErr);
+          return;
         }
+        const luma = analyzeImageDataLuma(rawImg);
+        let softTextCue = false;
+        let structuredDocCue = false;
+        let weakSceneCue = false;
+        try {
+          const cues = previewHeuristicTextCues(w, h, rawImg.data);
+          softTextCue = cues.softTextCue;
+          structuredDocCue = cues.structuredDocCue;
+          weakSceneCue = cues.weakSceneCue;
+        } catch (cueErr) {
+          console.warn("[CameraIntent/OCR] previewHeuristicTextCues:", cueErr);
+        }
+
+        console.info("[CameraIntent/Frame] camera→canvas", {
+          drawImage: { sx: 0, sy: 0, sw: vw, sh: vh, dx: 0, dy: 0, dw: w, dh: h },
+          video: { readyState: video.readyState, paused: video.paused },
+          luma,
+          heuristicsFrom: "raw_frame_before_binarize",
+        });
+
+        if (!worker) {
+          const wantShow = softTextCue || structuredDocCue || weakSceneCue;
+          tickTextHintBubble(wantShow, {
+            pipeline: "preview_heuristic_fallback",
+            note: "OCR unavailable — heuristic only (recall mode).",
+            frameW: w,
+            frameH: h,
+            luma,
+            hasTextSignal: false,
+            softTextCue,
+            structuredDocCue,
+            weakSceneCue,
+          });
+          return;
+        }
+
+        binarizeImageDataForOcr(rawImg);
+        pctx.putImageData(rawImg, 0, 0);
+
+        if (frameDebugEnabled()) {
+          updateFrameDebugUI(pc, luma, {
+            readyState: video.readyState,
+            videoWidth: vw,
+            videoHeight: vh,
+            paused: !!video.paused,
+          });
+        }
+
+        console.info("[CameraIntent/OCR] recognize:start", {
+          frameW: w,
+          frameH: h,
+          videoW: vw,
+          videoH: vh,
+          preprocess: "grayscale+otsu_binarize",
+          lumaSummary: {
+            lumaMean: luma.lumaMean,
+            lumaMin: luma.lumaMin,
+            lumaMax: luma.lumaMax,
+            note: luma.note,
+          },
+        });
+
+        const t0 = performance.now();
+        let data = null;
+        try {
+          const out = await worker.recognize(
+            pc,
+            {},
+            { text: true, blocks: true, hocr: false, tsv: false, box: false, unlv: false, osd: false }
+          );
+          data = out && out.data ? out.data : null;
+        } catch (recErr) {
+          console.error("[CameraIntent/OCR] recognize:error", recErr);
+          throw recErr;
+        }
+        const ocrMs = Math.round(performance.now() - t0);
+
+        const rawText = (data && data.text ? data.text : "").replace(/\s+/g, " ").trim();
+        const chars = previewAlnumCount(rawText);
+        const hasTextSignal = previewOcrGlyphSignal(rawText, data);
+        const wantShow = hasTextSignal || softTextCue || structuredDocCue || weakSceneCue;
+        const conf01 = ocrConfidence01(data);
+
+        console.info("[CameraIntent/OCR] recognize:end", {
+          ms: ocrMs,
+          dataText: rawText,
+          dataConfidenceRaw: data ? data.confidence : null,
+          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
+          alnumChars: chars,
+          blockCount: data && data.blocks ? data.blocks.length : 0,
+          hasTextSignal,
+          softTextCue,
+          structuredDocCue,
+          weakSceneCue,
+          wantShow,
+          gating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms",
+        });
+
+        tickTextHintBubble(wantShow, {
+          pipeline: "tesseract_preview_ocr",
+          engine: "Tesseract.js eng (LSTM), on-device",
+          frameW: w,
+          frameH: h,
+          luma,
+          ocrMs,
+          textPreview: rawText.slice(0, 100),
+          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
+          hasTextSignal,
+          softTextCue,
+          structuredDocCue,
+          weakSceneCue,
+          alnumChars: chars,
+        });
       } catch (e) {
-        console.warn("Preview heuristic:", e);
+        console.warn("[CameraIntent/OCR] Preview OCR:", e);
       } finally {
         previewPollBusy = false;
       }
     }
 
     async function runExamineTextFlow() {
-      if (!video.videoWidth || hintExamineBusy) return;
+      if (hintExamineBusy) return;
+      if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2 || video.videoHeight < 2) {
+        console.warn("[CameraIntent/Frame] examine skip — video not ready", {
+          readyState: video.readyState,
+          needReadyState: ">= " + VIDEO_READYSTATE_MIN,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+        });
+        showToast("Camera not ready yet", null);
+        return;
+      }
       hintExamineBusy = true;
+      resetTextHintBubbleDebounce();
+      logTextDetect("gemini_request", { pipeline: "gemini_multimodal", path: "POST /analyze", phase: "start" });
       if (textHintBar) textHintBar.classList.add("is-examining");
       if (textHintIcon) textHintIcon.classList.add("is-armed");
       analyzingBadge.classList.add("show");
@@ -2214,22 +3172,49 @@ Rules:
 
       try {
         await new Promise((r) => setTimeout(r, 300));
+        if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2 || video.videoHeight < 2) {
+          console.warn("[CameraIntent/Frame] examine skip after delay — video still not ready");
+          showToast("Camera frame not available", null);
+          return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const exLuma = analyzePreviewCanvasLuma(canvas, ctx);
+        console.info("[CameraIntent/Frame] examine capture (hidden canvas)", {
+          canvas: canvas.width + "×" + canvas.height,
+          videoReadyState: video.readyState,
+          luma: exLuma,
+        });
         const b64 = jpegBase64FromCanvas(0.88);
         let parsed = null;
         try {
           parsed = await analyzeFrameViaServer(b64);
         } catch (err) {
           console.warn("Gemini examine failed:", err);
+          logTextDetect("gemini_error", { message: err && err.message ? err.message : String(err) });
+          resetTextHintBubbleDebounce();
+          setTextHintBarVisible(false);
           showToast(err && err.message ? err.message : "Could not reach Gemini", null);
           return;
         }
 
         const clean = (parsed.extractedText || "").replace(/\|/g, "I").trim();
-        if (!parsed.hasMeaningfulText && clean.length < MIN_TEXT_LEN) {
+        const tdc = Number(parsed.textDetectionConfidence);
+        const tdcOk = Number.isFinite(tdc) ? tdc : 0;
+        const acceptExtract =
+          clean.length >= MIN_TEXT_LEN ||
+          (parsed.hasMeaningfulText === true && clean.length >= 5) ||
+          (clean.length >= 5 && tdcOk >= 0.52);
+        if (clean.length < 5 || !acceptExtract) {
+          logTextDetect("gemini_reject", summarizeGeminiTextDetect(parsed));
+          resetTextHintBubbleDebounce();
+          setTextHintBarVisible(false);
           showToast("No clear text in frame", null);
           return;
         }
+
+        logTextDetect("gemini_ok", summarizeGeminiTextDetect(parsed));
 
         lastText = clean || lastText;
         const ent = parseEntities(lastText);
@@ -2250,7 +3235,7 @@ Rules:
         }
         lastGeminiResult = parsed;
 
-        renderTextRegions(syntheticRegionsFromText(lastText));
+        renderTextRegions(regionsForHighlight(parsed, lastText));
 
         const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
         intentHint.textContent = preview + (lastText.length > 220 ? "…" : "");
@@ -2264,6 +3249,7 @@ Rules:
         hintExamineBusy = false;
         if (textHintBar) textHintBar.classList.remove("is-examining");
         if (!examinationUIActive && textHintIcon) textHintIcon.classList.remove("is-armed");
+        if (examinationUIActive) setTextHintBarVisible(true);
       }
     }
 
@@ -2271,8 +3257,7 @@ Rules:
       if (!video.videoWidth) return;
       dismissExaminationUI();
       setTextHintBarVisible(false);
-      previewHintPositiveStreak = 0;
-      previewHintNegativeStreak = 0;
+      resetTextHintBubbleDebounce();
       showIntents(false);
 
       btnShutter.disabled = true;
@@ -2339,10 +3324,10 @@ Rules:
       }
 
       if (intent === "todolist") {
-        modalTitle.textContent = "Create checklist";
+        modalTitle.textContent = "New list";
         modalSub.classList.add("hidden");
         renderTodoList();
-        btnSave.textContent = "Save list";
+        btnSave.textContent = "Save";
         backdrop.classList.add("open");
         backdrop.setAttribute("aria-hidden", "false");
         return;
@@ -2458,7 +3443,7 @@ Rules:
         lastBlobUrl = URL.createObjectURL(blob);
         console.log("Todo list:", lastSavedPayload);
         closeModal();
-        showToast("Todo list saved — wire to Google Tasks API later", lastBlobUrl);
+        showToast("List saved on this device", lastBlobUrl);
         return;
       }
 
@@ -2525,8 +3510,33 @@ Rules:
     (async function boot() {
       try {
         await startCamera();
-        window.setInterval(() => pollPreviewTextHeuristic(), PREVIEW_POLL_MS);
-        window.setTimeout(() => pollPreviewTextHeuristic(), 700);
+        void verifyOcrAssetUrls().catch((e) => console.warn("[CameraIntent/OCR] verifyOcrAssetUrls:", e));
+        void getOcrWorker().then(async (w) => {
+          const params = new URLSearchParams(location.search);
+          if (params.get("ocrTest") === "1" && w) {
+            await runOcrCanvasSelfTest(w);
+            await runOcrStaticImageTest(w, "/test-ocr.png");
+          }
+        });
+        if (TEXT_DETECT_DEBUG) {
+          logTextDetect("boot", {
+            previewPollMs: PREVIEW_POLL_MS,
+            previewOcr: "Tesseract.js continuous OCR on downscaled frames",
+            hintBubbleGating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms after last positive",
+            ocrMaxWidth: OCR_PREVIEW_MAX_WIDTH,
+            ocrLogHint: "Add ?ocrLog=1 for Tesseract worker progress logs",
+            ocrTestHint: "Add ?ocrTest=1 for canvas + /test-ocr.png sanity checks",
+            frameDebugHint: "Add ?frameDebug=1 to show OCR input canvas + luma on screen",
+            heuristicFallback: "Only if Tesseract fails to load",
+            debounceShowMs: HINT_DEBOUNCE_SHOW_MS,
+            debounceHideMs: HINT_DEBOUNCE_HIDE_MS,
+            gemini: "POST /analyze when user taps Examine text",
+          });
+        }
+        window.setInterval(() => {
+          pollPreviewTextDetection().catch((e) => console.warn(e));
+        }, PREVIEW_POLL_MS);
+        window.setTimeout(() => pollPreviewTextDetection().catch((e) => console.warn(e)), 700);
       } catch (err) {
         alert(
           "Camera failed: " +
@@ -2536,6 +3546,18 @@ Rules:
         console.error(err);
       }
     })();
+
+    window.addEventListener("beforeunload", () => {
+      try {
+        if (ocrWorkerPromise) {
+          ocrWorkerPromise.then((w) => {
+            try {
+              if (w && typeof w.terminate === "function") w.terminate();
+            } catch (_) {}
+          });
+        }
+      } catch (_) {}
+    });
 
     textHintBar.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2560,7 +3582,7 @@ Rules:
           }
           navigator.clipboard.writeText(t).then(
             () => {
-              showToast("Copied", null);
+              showToast("Copied to clipboard", null);
               dismissExaminationUI();
             },
             () => showToast("Copy blocked", null)
@@ -2677,7 +3699,7 @@ Rules:
         return;
       }
       navigator.clipboard.writeText(t).then(
-        () => showToast("Copied", null),
+        () => showToast("Copied to clipboard", null),
         () => showToast("Copy blocked", null)
       );
     });
