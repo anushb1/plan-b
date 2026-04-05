@@ -114,50 +114,51 @@
       );
     }
 
-    /* Pixel-style “Examine text” shooting hint */
+    /* Top slot: “Examine text” — solid dark pill (same slot as toast) */
     .pixel-text-hint {
       position: absolute;
-      top: 88px;
+      top: calc(env(safe-area-inset-top, 0px) + 82px);
+      bottom: auto;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 28;
-      display: none;
+      z-index: 26;
+      display: inline-flex;
       align-items: center;
-      opacity: 0;
-      gap: 10px;
-      padding: 8px 16px 8px 12px;
+      gap: 6px;
+      padding: 5px 11px 5px 8px;
       border-radius: 999px;
       border: none;
       font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 400;
       letter-spacing: 0.01em;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(20, 20, 22, 0.72);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      color: #fff;
+      background: rgba(60, 60, 60, 0.9);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      pointer-events: auto;
-      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-      max-width: calc(100% - 32px);
+      max-width: calc(100% - 28px);
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        opacity 0.2s ease-out,
+        visibility 0.2s ease-out,
+        transform 0.2s ease-out,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .pixel-text-hint:focus,
+    .pixel-text-hint:focus-visible {
+      outline: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
     .pixel-text-hint.is-visible {
-      display: inline-flex;
+      visibility: visible;
       opacity: 1;
-      animation: hint-pop-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-
-    @keyframes hint-pop-in {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
+      pointer-events: auto;
     }
 
     .pixel-text-hint:active {
@@ -168,38 +169,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.85);
-      transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+      color: rgba(255, 255, 255, 0.92);
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .pixel-text-hint__ico svg {
-      width: 17px;
-      height: 17px;
+      width: 14px;
+      height: 14px;
     }
 
     .pixel-text-hint__ico.is-armed {
-      background: rgba(255, 235, 150, 0.28);
-      color: #fff8dc;
-      box-shadow: 0 0 0 1px rgba(255, 224, 130, 0.45);
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
     }
 
     .pixel-text-hint.is-examining {
-      background: rgba(255, 248, 210, 0.88);
-      color: rgba(28, 22, 8, 0.95);
-      box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.65),
-        0 0 0 1px rgba(255, 200, 80, 0.55);
+      background: rgba(72, 72, 72, 0.95);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32), 0 1px 2px rgba(0, 0, 0, 0.22);
     }
 
     .pixel-text-hint.is-examining .pixel-text-hint__ico {
-      background: rgba(255, 220, 120, 0.55);
-      color: rgba(40, 30, 5, 0.92);
-      box-shadow: 0 0 0 1px rgba(220, 160, 40, 0.4);
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
     }
 
     .pixel-text-hint__label {
@@ -234,6 +230,150 @@
 
     @keyframes region-fade-in {
       to { opacity: 1; }
+    }
+
+    /* Examine Text OCR regions (on-device): white Lens-style boxes — separate from yellow grid highlights */
+    .text-region-box.ocr-line-box {
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      animation: lens-box-fade-in 0.28s cubic-bezier(0.2, 0.85, 0.2, 1) forwards;
+      opacity: 0;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font: inherit;
+      color: transparent;
+      appearance: none;
+    }
+
+    .text-region-box.ocr-line-box.is-selected {
+      border-width: 2px;
+      border-color: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.32),
+        0 0 14px rgba(255, 255, 255, 0.22);
+    }
+
+    .app.lens-examination .text-region-layer {
+      z-index: 14;
+    }
+
+    .app.lens-examination .text-region-layer .ocr-line-box {
+      pointer-events: auto;
+    }
+
+    /* Lens-style highlights (legacy / server-normalized regions) */
+    .text-region-box.lens-box {
+      border: 1.5px solid rgba(66, 165, 245, 0.95);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28), 0 0 18px rgba(66, 165, 245, 0.32);
+      background: rgba(66, 165, 245, 0.06);
+      animation: lens-box-fade-in 0.42s cubic-bezier(0.2, 0.85, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes lens-box-fade-in {
+      from {
+        opacity: 0;
+        transform: scale(0.992);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Lens intents: centered above shutter (~14px gap); does not overlap shutter row */
+    .lens-intent-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(max(138px, env(safe-area-inset-bottom, 0px) + 122px) + 72px + 14px);
+      z-index: 13;
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.18s ease-out, visibility 0.18s ease-out;
+    }
+
+    .lens-intent-strip.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .lens-intent-pill {
+      appearance: none;
+      cursor: pointer;
+      margin: 0;
+      padding: 5px 12px;
+      border-radius: 18px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      text-align: center;
+      color: #fff;
+      background: rgba(60, 60, 60, 0.9);
+      border: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.16);
+      transition: opacity 0.18s ease-out, transform 0.15s ease, background 0.15s ease;
+      max-width: min(44vw, 200px);
+      width: auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .lens-intent-pill:focus,
+    .lens-intent-pill:focus-visible {
+      outline: none;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill {
+      animation: lens-intent-pill-in 0.18s ease-out both;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill:nth-child(2) {
+      animation-delay: 0.05s;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill:nth-child(3) {
+      animation-delay: 0.09s;
+    }
+
+    @keyframes lens-intent-pill-in {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .lens-intent-pill:hover {
+      background: rgba(68, 68, 68, 0.92);
+    }
+
+    .lens-intent-pill:active {
+      transform: scale(0.98);
+      opacity: 0.92;
     }
 
     /* Tap-away scrim: leaves shutter + mode strip tappable (capture still dismisses bubbles in JS) */
@@ -319,9 +459,11 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .pixel-text-hint.is-visible,
+      .pixel-text-hint,
+      .toast,
       .quick-suggest-layer,
-      .quick-suggest-pill {
+      .quick-suggest-pill,
+      .lens-intent-strip.is-visible .lens-intent-pill {
         animation: none !important;
         transition: opacity 0.15s ease !important;
       }
@@ -1240,33 +1382,46 @@
       resize: vertical;
     }
 
-    /* Toast */
+    /*
+     * Toast — just below “Examine Text” shooting hint (hint top = safe + 82px).
+     * 40px ≈ hint row height + padding; 10px gap below hint.
+     */
     .toast {
-      position: fixed;
-      top: max(16px, env(safe-area-inset-top));
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 82px + 40px + 10px);
       left: 50%;
-      transform: translateX(-50%) translateY(-120%);
-      background: #27272a;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: min(320px, calc(100% - 28px));
+      background: rgba(60, 60, 60, 0.95);
       color: #fff;
-      padding: 12px 18px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 400;
       display: flex;
       align-items: center;
-      gap: 12px;
-      z-index: 200;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-      max-width: 92vw;
+      gap: 10px;
+      z-index: 27;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
     }
 
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     .toast a {
-      color: var(--md-primary);
-      font-weight: 600;
-      text-decoration: none;
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 400;
+      text-decoration: underline;
+      text-underline-offset: 2px;
       white-space: nowrap;
     }
 
@@ -1476,6 +1631,8 @@
       <button type="button" class="quick-suggest-pill" data-quick="reminder">Create reminder</button>
     </div>
 
+    <div class="lens-intent-strip" id="lensIntentStrip" role="group" aria-label="Suggested actions" aria-hidden="true"></div>
+
     <div class="intent-wrap" id="intentWrap">
       <div class="intent-panel">
         <p class="intent-hint hidden" id="intentHint"></p>
@@ -1581,11 +1738,16 @@
     </div>
 
     <div class="nav-gesture-bar" aria-hidden="true"></div>
-          </div>
-        </div>
-      </div>
+
+    <div class="toast" id="toast" aria-live="polite">
+      <span id="toastMsg">Saved</span>
+      <a href="#" id="toastView">View</a>
     </div>
-  </div>
+          </div><!-- .app -->
+        </div><!-- .device-screen -->
+      </div><!-- .device-bezel -->
+    </div><!-- .device-frame -->
+  </div><!-- .device-stage -->
 
   <div class="backdrop" id="backdrop" aria-hidden="true">
     <div class="modal" id="actionModal" role="dialog" aria-labelledby="modalTitle" data-mode="event">
@@ -1678,16 +1840,11 @@
     </div>
   </div>
 
-  <div class="toast" id="toast" aria-live="polite">
-    <span id="toastMsg">Saved</span>
-    <a href="#" id="toastView">View</a>
-  </div>
-
   <div class="settings-backdrop" id="settingsBackdrop" aria-hidden="true">
     <div class="settings-sheet" role="dialog" aria-labelledby="settingsTitle">
       <h3 id="settingsTitle">Analysis server</h3>
       <p>
-        Live preview runs <strong>Tesseract.js</strong> in your browser (no server round-trip). “Examine text” sends a full-quality frame to <code style="font-size:12px;">POST /analyze</code>; the server calls Gemini with <code style="font-size:12px;">GEMINI_API_KEY</code> — that key is not stored in the browser.
+        Live preview and <strong>Examine text</strong> use <strong>Tesseract.js</strong> on-device in your browser (offline-capable). No cloud OCR and no LLM for text examination.
       </p>
       <p style="margin-top:10px;font-size:13px;opacity:0.9;">
         Run <code style="font-size:12px;">npm install</code> and <code style="font-size:12px;">npm start</code> from the project root, with a <code style="font-size:12px;">.env</code> file (see <code style="font-size:12px;">.env.example</code>).
@@ -1744,6 +1901,7 @@
     const settingsBackdrop = document.getElementById("settingsBackdrop");
     const modalBodyScroll = document.getElementById("modalBodyScroll");
     const moreOptionsEl = document.getElementById("moreOptions");
+    const lensIntentStrip = document.getElementById("lensIntentStrip");
     const textHintBar = document.getElementById("textHintBar");
     const textHintIcon = document.getElementById("textHintIcon");
     const textRegionLayer = document.getElementById("textRegionLayer");
@@ -1760,25 +1918,42 @@
     let lastSavedPayload = null;
     let lastBlobUrl = null;
     let lastGeminiResult = null;
+    let lastAnalyzeImageResult = null;
+    const GENERIC_LENS_INTENTS = ["Copy text", "Add to calendar", "Create list"];
     let lastMapsQuery = "";
     let examinationUIActive = false;
     let previewPollBusy = false;
     let hintExamineBusy = false;
+    let examineOcrScratchCanvas = null;
+    let examineOcrElements = [];
+    let examineSelectedIndex = -1;
+    let examineOcrImageW = 0;
+    let examineOcrImageH = 0;
     let previewCanvas = null;
     let previewCtx = null;
     const MIN_TEXT_LEN = 8;
     const PREVIEW_POLL_MS = 400;
-    /** Tesseract preview OCR on downscaled canvas; “Examine text” still uses Gemini (POST /analyze). */
+    /** Tesseract preview OCR on downscaled canvas; “Examine text” runs full-frame on-device OCR (no server / LLM). */
     const OCR_PREVIEW_MAX_WIDTH = 960;
+    const OCR_EXAMINE_MAX_EDGE = 1280;
+    const OCR_EXAMINE_RECOGNIZE_TIMEOUT_MS = 15000;
+    const OCR_EXAMINE_MAX_REGIONS = 40;
+    const EXAMINE_TOAST_NO_TEXT = "Please try to focus on text";
+    const EXAMINE_TOAST_BLURRY = "Text not clear. Please try to get closer";
+    const EXAMINE_TOAST_TECHNICAL = "Unable to detect text. Please try again";
+    /** Below this (when finite), treat as low-confidence / illegible for examine fallback messaging. */
+    const OCR_EXAMINE_LOW_CONF_THRESHOLD = 0.42;
     const HINT_DEBOUNCE_SHOW_MS = 0;
     const HINT_DEBOUNCE_HIDE_MS = 0;
     /** After a positive text cue, keep “Examine Text” up until this long after the last positive poll (reduces flicker). */
     const TEXT_HINT_HOLD_MS = 3000;
+    /** Require this many consecutive positive polls before showing (reduces one-frame noise). */
+    const TEXT_HINT_SHOW_MIN_STREAK = 2;
     /** If Tesseract never settles, release the preview poll lock so the UI can recover. */
     const OCR_PREVIEW_RECOGNIZE_TIMEOUT_MS = 12000;
     /** getOcrWorker() can hang on WASM/network; do not hold previewPollBusy indefinitely. */
     const OCR_WORKER_ACQUIRE_TIMEOUT_MS = 8000;
-    /** Heuristic cues (softTextCue / structuredDocCue) are not scored for UI gating — see pollPreviewTextDetection. */
+    /** UI gating: OCR (nw≥2) || luma+edge scene cue — no grid/row heuristics — see pollPreviewTextDetection. */
     const TEXT_DETECT_DEBUG =
       typeof location !== "undefined" &&
       (new URLSearchParams(location.search).get("textDebug") === "1" ||
@@ -1820,6 +1995,7 @@
     let textHintShowPendingSince = 0;
     let textHintHidePendingSince = 0;
     let textHintHoldUntil = 0;
+    let textHintPositiveStreak = 0;
     let textDetectPreviewLogWant = null;
     let textDetectPreviewLogAt = 0;
     let ocrWorkerPromise = null;
@@ -1835,23 +2011,37 @@
       textHintShowPendingSince = 0;
       textHintHidePendingSince = 0;
       textHintHoldUntil = 0;
+      textHintPositiveStreak = 0;
     }
 
-    function tickTextHintBubble(wantShow, meta) {
+    /**
+     * @param {boolean} rawPositive — this poll has a clear text signal (OCR and/or strong layout).
+     * Hold extends on every rawPositive; visibility requires TEXT_HINT_SHOW_MIN_STREAK consecutive rawPositive polls.
+     */
+    function tickTextHintBubble(rawPositive, meta) {
       const now = performance.now();
       const visible = textHintBar && textHintBar.classList.contains("is-visible");
-      if (
-        TEXT_DETECT_DEBUG &&
-        (wantShow !== textDetectPreviewLogWant || now - textDetectPreviewLogAt >= 2500)
-      ) {
-        textDetectPreviewLogWant = wantShow;
-        textDetectPreviewLogAt = now;
-        logTextDetect("preview", meta);
-      }
 
-      if (wantShow) {
+      if (rawPositive) {
+        textHintPositiveStreak = Math.min(textHintPositiveStreak + 1, 256);
         textHintHoldUntil = now + TEXT_HINT_HOLD_MS;
         textHintHidePendingSince = 0;
+      } else {
+        textHintPositiveStreak = 0;
+      }
+
+      const wantDisplay = rawPositive && textHintPositiveStreak >= TEXT_HINT_SHOW_MIN_STREAK;
+
+      if (
+        TEXT_DETECT_DEBUG &&
+        (rawPositive !== textDetectPreviewLogWant || now - textDetectPreviewLogAt >= 2500)
+      ) {
+        textDetectPreviewLogWant = rawPositive;
+        textDetectPreviewLogAt = now;
+        logTextDetect("preview", Object.assign({ rawPositive, textHintPositiveStreak, wantDisplay }, meta));
+      }
+
+      if (wantDisplay) {
         if (!visible) {
           if (HINT_DEBOUNCE_SHOW_MS <= 0) {
             setTextHintBarVisible(true);
@@ -1902,6 +2092,329 @@
       } catch {
         return null;
       }
+    }
+
+    /** Map API labels to short on-screen copy (2–3 words). */
+    function displayLensIntentLabel(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return GENERIC_LENS_INTENTS[0];
+      const l = s.toLowerCase();
+      if (/copy\s+address/.test(l)) return "Copy address";
+      if (/\bcopy\b/.test(l)) return "Copy text";
+      if (/calendar|schedule|event|meeting/.test(l)) return "Add to calendar";
+      if (/\blist\b|todo|checklist/.test(l)) return "Create list";
+      if (/create\s+reminder/.test(l)) return "Create reminder";
+      if (/remind/.test(l)) return "Set reminder";
+      if (/add\s+contact/.test(l)) return "Add contact";
+      if (/^call$/i.test(s.trim()) || (/\bcall\b/.test(l) && !/contact/.test(l))) return "Call";
+      if (/map|location|address|directions|navigate/.test(l)) return "Open in Maps";
+      if (/note|save note/.test(l)) return "Save note";
+      if (/\btask\b/.test(l)) return "Create task";
+      if (/share/.test(l)) return "Share text";
+      const words = s.split(/\s+/).filter(Boolean).slice(0, 3);
+      return words.length ? words.join(" ") : GENERIC_LENS_INTENTS[0];
+    }
+
+    function mapLensIntentLabelToAction(label) {
+      const L = String(label || "").toLowerCase();
+      if (/\bcall\b/.test(L) && !/contact/.test(L)) return "call";
+      if (/add\s+contact/.test(L)) return "contact";
+      if (/copy\s+address/.test(L)) return "copy";
+      if (/\bcopy|clipboard/.test(L)) return "copy";
+      if (/calendar|schedule|event|meeting/.test(L)) return "event";
+      if (/list|todo|checklist/.test(L)) return "todolist";
+      if (/create\s+reminder|remind/.test(L)) return "reminder";
+      if (/map|location|address|directions|navigate/.test(L)) return "maps";
+      if (/note|save note/.test(L)) return "note";
+      if (/\btask\b/.test(L)) return "task";
+      if (/share/.test(L)) return "share";
+      if (/doc/.test(L)) return "gdoc";
+      return "copy";
+    }
+
+    function clearLensIntentStrip() {
+      if (!lensIntentStrip) return;
+      lensIntentStrip.innerHTML = "";
+      lensIntentStrip.removeAttribute("data-lens-item-index");
+      lensIntentStrip.classList.remove("is-visible");
+      lensIntentStrip.setAttribute("aria-hidden", "true");
+    }
+
+    function showLensIntentStrip(intentLabels, maxCount, itemIndex) {
+      if (!lensIntentStrip) return;
+      const src = intentLabels && intentLabels.length ? intentLabels : GENERIC_LENS_INTENTS;
+      const cap =
+        typeof maxCount === "number" && maxCount > 0 ? maxCount : src.length > 2 ? 3 : 2;
+      const list = src.slice(0, cap);
+      lensIntentStrip.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const label of list) {
+        const display = displayLensIntentLabel(label);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lens-intent-pill";
+        btn.setAttribute("data-action", mapLensIntentLabelToAction(label));
+        btn.textContent = display;
+        frag.appendChild(btn);
+      }
+      lensIntentStrip.appendChild(frag);
+      lensIntentStrip.classList.add("is-visible");
+      lensIntentStrip.setAttribute("aria-hidden", "false");
+      if (typeof itemIndex === "number" && itemIndex >= 0) {
+        lensIntentStrip.setAttribute("data-lens-item-index", String(itemIndex));
+      } else {
+        lensIntentStrip.removeAttribute("data-lens-item-index");
+      }
+    }
+
+    /** --- Examine Text: on-device OCR (Tesseract), overlay, rule classifier, intent mapping --- */
+    const EXAMINE_PHONE_RE = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/;
+    const EXAMINE_DATE_SLASH_RE = /\b\d{1,2}\/\d{1,2}\b/;
+    const EXAMINE_DATE_ISO_RE = /\b\d{4}-\d{2}-\d{2}\b/;
+    const EXAMINE_MONTH_RE =
+      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i;
+    const EXAMINE_STREET_RE = /\b(St|Ave|Rd|Blvd)\b/i;
+
+    function classifyExamineText(raw) {
+      const t = String(raw || "").trim();
+      if (!t) return "text";
+      if (EXAMINE_PHONE_RE.test(t)) return "contact";
+      if (EXAMINE_DATE_SLASH_RE.test(t) || EXAMINE_DATE_ISO_RE.test(t) || EXAMINE_MONTH_RE.test(t)) return "date";
+      if (/\d/.test(t) && EXAMINE_STREET_RE.test(t) && t.length > 10) return "address";
+      return "text";
+    }
+
+    function examineActionsForType(type) {
+      switch (type) {
+        case "date":
+          return ["Add to calendar", "Create reminder"];
+        case "address":
+          return ["Open in Maps", "Copy address"];
+        case "contact":
+          return ["Call", "Add contact"];
+        default:
+          return ["Copy text", "Create list"];
+      }
+    }
+
+    function collectExamineOcrLines(data) {
+      const out = [];
+      for (const b of data.blocks || []) {
+        for (const p of b.paragraphs || []) {
+          for (const line of p.lines || []) {
+            const t = String(line.text || "")
+              .replace(/\s+/g, " ")
+              .trim();
+            const bb = line.bbox;
+            if (!t || !bb || !Number.isFinite(bb.x0)) continue;
+            const w = bb.x1 - bb.x0;
+            const h = bb.y1 - bb.y0;
+            if (w < 2 || h < 2) continue;
+            out.push({ text: t, bbox: { x: bb.x0, y: bb.y0, width: w, height: h } });
+          }
+        }
+      }
+      return out;
+    }
+
+    function collectExamineOcrWords(data) {
+      const out = [];
+      for (const b of data.blocks || []) {
+        for (const p of b.paragraphs || []) {
+          for (const line of p.lines || []) {
+            for (const word of line.words || []) {
+              const t = String(word.text || "")
+                .replace(/\s+/g, " ")
+                .trim();
+              const bb = word.bbox;
+              if (!t || !bb || !Number.isFinite(bb.x0)) continue;
+              const w = bb.x1 - bb.x0;
+              const h = bb.y1 - bb.y0;
+              if (w < 1 || h < 1) continue;
+              out.push({ text: t, bbox: { x: bb.x0, y: bb.y0, width: w, height: h } });
+            }
+          }
+        }
+      }
+      return out;
+    }
+
+    function flattenOcrToExamineElements(data) {
+      if (!data) return [];
+      let lines = collectExamineOcrLines(data);
+      if (!lines.length) lines = collectExamineOcrWords(data);
+      return lines.slice(0, OCR_EXAMINE_MAX_REGIONS);
+    }
+
+    function videoImageBboxToOverlayPercent(bbox, videoEl, imgW, imgH) {
+      const vw = videoEl.videoWidth;
+      const vh = videoEl.videoHeight;
+      if (!vw || !vh || !imgW || !imgH) return null;
+      const rect = videoEl.getBoundingClientRect();
+      const cw = rect.width;
+      const ch = rect.height;
+      if (!cw || !ch) return null;
+      const scale = Math.max(cw / vw, ch / vh);
+      const dispW = vw * scale;
+      const dispH = vh * scale;
+      const ox = (cw - dispW) / 2;
+      const oy = (ch - dispH) / 2;
+      const sx = imgW / vw;
+      const sy = imgH / vh;
+      const vx = bbox.x / sx;
+      const vy = bbox.y / sy;
+      const vwidth = bbox.width / sx;
+      const vheight = bbox.height / sy;
+      const left = ((ox + vx * scale) / cw) * 100;
+      const top = ((oy + vy * scale) / ch) * 100;
+      const wPct = ((vwidth * scale) / cw) * 100;
+      const hPct = ((vheight * scale) / ch) * 100;
+      return {
+        left: Math.max(0, Math.min(100, left)),
+        top: Math.max(0, Math.min(100, top)),
+        w: Math.max(0, Math.min(100, wPct)),
+        h: Math.max(0, Math.min(100, hPct)),
+      };
+    }
+
+    function applyExamineSelectionToAppState(sel) {
+      lastText = String(sel || "").trim();
+      const ent = parseEntities(lastText);
+      extracted = { title: ent.title, when: ent.when, location: ent.location };
+      lastClassification = classifyScan(lastText);
+      parsedTodoLines = parseTodoItems(lastText);
+      if (parsedTodoLines.length === 0 && lastText) {
+        parsedTodoLines = lastText
+          .split(/\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0)
+          .slice(0, 20);
+      }
+    }
+
+    function renderOcrExamineOverlays(elements) {
+      clearTextRegions();
+      examineSelectedIndex = -1;
+      if (!textRegionLayer || !elements || !elements.length || !video) {
+        if (textRegionLayer) textRegionLayer.setAttribute("aria-hidden", "true");
+        return;
+      }
+      textRegionLayer.setAttribute("aria-hidden", "false");
+      const frag = document.createDocumentFragment();
+      const iw = examineOcrImageW;
+      const ih = examineOcrImageH;
+      elements.forEach((item, i) => {
+        const pct = videoImageBboxToOverlayPercent(item.bbox, video, iw, ih);
+        if (!pct || pct.w < 0.035 || pct.h < 0.035) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "text-region-box ocr-line-box";
+        btn.setAttribute("data-examine-index", String(i));
+        btn.setAttribute("aria-label", "Text: " + (item.text || "").slice(0, 80));
+        btn.style.left = pct.left + "%";
+        btn.style.top = pct.top + "%";
+        btn.style.width = pct.w + "%";
+        btn.style.height = pct.h + "%";
+        btn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          selectExamineElement(i);
+        });
+        frag.appendChild(btn);
+      });
+      textRegionLayer.appendChild(frag);
+    }
+
+    function selectExamineElement(index) {
+      if (!examineOcrElements.length || index < 0 || index >= examineOcrElements.length) return;
+      examineSelectedIndex = index;
+      const el = examineOcrElements[index];
+      applyExamineSelectionToAppState(el.text);
+      const t = classifyExamineText(el.text);
+      const actions = examineActionsForType(t).slice(0, 2);
+      showLensIntentStrip(actions, 2, index);
+      if (textRegionLayer) {
+        textRegionLayer.querySelectorAll(".ocr-line-box").forEach((node) => {
+          const idx = parseInt(node.getAttribute("data-examine-index") || "-1", 10);
+          node.classList.toggle("is-selected", idx === index);
+        });
+      }
+      const preview = (el.text || "").replace(/\s+/g, " ").trim().slice(0, 220);
+      if (intentHint) {
+        intentHint.textContent = preview
+          ? preview + ((el.text || "").length > 220 ? "…" : "")
+          : "Select a region";
+        intentHint.classList.remove("hidden");
+      }
+      lastGeminiResult = {
+        extractedText: lastText,
+        textRegions: examineOcrElements.map((e) => ({
+          text: e.text,
+          box: { x0: e.bbox.x, y0: e.bbox.y, x1: e.bbox.x + e.bbox.width, y1: e.bbox.y + e.bbox.height },
+        })),
+        hasMeaningfulText: lastText.length >= 2,
+        textDetectionConfidence: 0.75,
+        writingStyle: "unknown",
+        structured: {},
+      };
+    }
+
+    async function runTesseractExamineOnCanvas(sourceCanvas) {
+      const worker = await Promise.race([
+        getOcrWorker(),
+        new Promise((_, rej) =>
+          window.setTimeout(() => rej(new Error("examine_get_worker_timeout")), OCR_WORKER_ACQUIRE_TIMEOUT_MS)
+        ),
+      ]);
+      if (!worker) throw new Error("OCR unavailable");
+
+      const fullW = sourceCanvas.width;
+      const fullH = sourceCanvas.height;
+      let src = sourceCanvas;
+      let scaleBack = 1;
+      const maxEdge = OCR_EXAMINE_MAX_EDGE;
+      if (Math.max(fullW, fullH) > maxEdge) {
+        scaleBack = Math.max(fullW, fullH) / maxEdge;
+        if (!examineOcrScratchCanvas) {
+          examineOcrScratchCanvas = document.createElement("canvas");
+        }
+        const tw = Math.max(2, Math.round(fullW / scaleBack));
+        const th = Math.max(2, Math.round(fullH / scaleBack));
+        examineOcrScratchCanvas.width = tw;
+        examineOcrScratchCanvas.height = th;
+        const sctx = examineOcrScratchCanvas.getContext("2d");
+        sctx.drawImage(sourceCanvas, 0, 0, fullW, fullH, 0, 0, tw, th);
+        src = examineOcrScratchCanvas;
+      }
+
+      const recognizeOpts = {
+        text: true,
+        blocks: true,
+        hocr: false,
+        tsv: false,
+        box: false,
+        unlv: false,
+        osd: false,
+      };
+      const out = await Promise.race([
+        worker.recognize(src, {}, recognizeOpts),
+        new Promise((_, rej) =>
+          window.setTimeout(() => rej(new Error("examine_ocr_timeout")), OCR_EXAMINE_RECOGNIZE_TIMEOUT_MS)
+        ),
+      ]);
+      const data = out && out.data ? out.data : null;
+      let elements = flattenOcrToExamineElements(data);
+      if (scaleBack !== 1) {
+        elements = elements.map((e) => ({
+          text: e.text,
+          bbox: {
+            x: e.bbox.x * scaleBack,
+            y: e.bbox.y * scaleBack,
+            width: e.bbox.width * scaleBack,
+            height: e.bbox.height * scaleBack,
+          },
+        }));
+      }
+      return { data, elements, imageW: fullW, imageH: fullH };
     }
 
     async function analyzeFrameViaServer(imageBase64) {
@@ -2347,6 +2860,8 @@ Rules:
 
     function showExaminationResultShell() {
       examinationUIActive = true;
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.add("lens-examination");
       if (textHintBar) {
         textHintBar.classList.remove("is-examining");
       }
@@ -2356,6 +2871,11 @@ Rules:
     }
 
     function dismissExaminationUI() {
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.remove("lens-examination");
+      examineOcrElements = [];
+      examineSelectedIndex = -1;
+      clearLensIntentStrip();
       clearTextRegions();
       hideQuickSuggestions();
       if (textHintBar) textHintBar.classList.remove("is-examining");
@@ -2395,26 +2915,23 @@ Rules:
       return { pc: previewCanvas, pctx: previewCtx };
     }
 
-    function previewFrameTextSignals(w, h, data) {
+    /**
+     * ROI luma variance + mean edge magnitude only (no row/grid/cell heuristics — avoids fighting the on-screen grid).
+     */
+    function previewFrameContrastEdgeOnly(w, h, data) {
       function lum(ii) {
         return 0.299 * data[ii] + 0.587 * data[ii + 1] + 0.114 * data[ii + 2];
       }
       const idx = (x, y) => (y * w + x) * 4;
-
       const roiX0 = Math.floor(w * 0.08);
       const roiX1 = Math.ceil(w * 0.92);
       const roiY0 = Math.floor(h * 0.1);
       const roiY1 = Math.ceil(h * 0.9);
-
       let edge = 0;
       let nEdge = 0;
       let sum = 0;
       let sumSq = 0;
       let nPix = 0;
-      let hGrad = 0;
-      let vGrad = 0;
-      let nGrad = 0;
-
       for (let y = roiY0; y < roiY1; y++) {
         for (let x = roiX0; x < roiX1; x++) {
           const i = idx(x, y);
@@ -2423,178 +2940,35 @@ Rules:
           sumSq += L * L;
           nPix++;
           if (x < roiX1 - 1) {
-            const dh = Math.abs(L - lum(idx(x + 1, y)));
-            edge += dh;
+            edge += Math.abs(L - lum(idx(x + 1, y)));
             nEdge++;
-            hGrad += dh;
-            nGrad++;
           }
           if (y < roiY1 - 1) {
-            const dv = Math.abs(L - lum(idx(x, y + 1)));
-            edge += dv;
+            edge += Math.abs(L - lum(idx(x, y + 1)));
             nEdge++;
-            vGrad += dv;
-            nGrad++;
           }
         }
       }
-
       if (nPix < 32 || nEdge < 4) {
-        return {
-          avgEdge: 0,
-          contrast: 0,
-          textyFraction: 0,
-          rowSpikeRatio: 0,
-          horizBias: 1,
-          notBlank: false,
-          edgePlausible: false,
-          softTextCue: false,
-          structuredDocCue: false,
-          weakSceneCue: false,
-          confidence: 0,
-          textAreaCoverage: 0,
-          wantShow: false,
-        };
+        return { avgEdge: 0, contrast: 0, notBlank: false, edgePlausible: false };
       }
-
       const mean = sum / nPix;
       const variance = Math.max(0, sumSq / nPix - mean * mean);
       const contrast = Math.sqrt(variance);
       const avgEdge = edge / nEdge;
-      const horizBias = nGrad ? hGrad / (vGrad + 1e-6) : 1;
-
-      const rowVars = [];
-      for (let y = roiY0; y < roiY1; y++) {
-        let rs = 0;
-        let rs2 = 0;
-        const rn = roiX1 - roiX0;
-        for (let x = roiX0; x < roiX1; x++) {
-          const L = lum(idx(x, y));
-          rs += L;
-          rs2 += L * L;
-        }
-        const m = rs / rn;
-        rowVars.push(Math.max(0, rs2 / rn - m * m));
-      }
-      rowVars.sort((a, b) => a - b);
-      const medVar = rowVars[Math.floor(rowVars.length * 0.5)] || 0;
-      const spikeRows = rowVars.filter((v) => v > Math.max(85, medVar * 1.82)).length;
-      const rowSpikeRatio = rowVars.length ? spikeRows / rowVars.length : 0;
-
-      const cols = 10;
-      const rows = 8;
-      const cellW = (roiX1 - roiX0) / cols;
-      const cellH = (roiY1 - roiY0) / rows;
-      let textyBlocks = 0;
-      let totalBlocks = 0;
-      const step = 2;
-
-      for (let br = 0; br < rows; br++) {
-        for (let bc = 0; bc < cols; bc++) {
-          const cx0 = Math.floor(roiX0 + bc * cellW);
-          const cx1 = Math.floor(roiX0 + (bc + 1) * cellW);
-          const cy0 = Math.floor(roiY0 + br * cellH);
-          const cy1 = Math.floor(roiY0 + (br + 1) * cellH);
-          if (cx1 <= cx0 + 4 || cy1 <= cy0 + 4) continue;
-          totalBlocks++;
-
-          let s = 0;
-          let s2 = 0;
-          let n = 0;
-          let bH = 0;
-          let bV = 0;
-          let nB = 0;
-          for (let y = cy0; y < cy1 - step; y += step) {
-            for (let x = cx0; x < cx1 - step; x += step) {
-              const L0 = lum(idx(x, y));
-              s += L0;
-              s2 += L0 * L0;
-              n++;
-              bH += Math.abs(L0 - lum(idx(x + step, y)));
-              bV += Math.abs(L0 - lum(idx(x, y + step)));
-              nB++;
-            }
-          }
-          if (n < 8 || nB < 6) continue;
-          const m = s / n;
-          const v = Math.max(0, s2 / n - m * m);
-          const ah = bH / nB;
-          const av = bV / nB;
-          const ratio = ah / (av + 1e-3);
-          const printedTexty =
-            v > 12 &&
-            v < 2800 &&
-            ah > 1.75 &&
-            ratio > 0.95 &&
-            m > 8 &&
-            m < 254;
-          const handwrittenTexty =
-            v > 16 &&
-            v < 3800 &&
-            ah > 1.35 &&
-            av > 1.2 &&
-            m > 6 &&
-            m < 254 &&
-            ah + av > 2.9 &&
-            ratio > 0.72 &&
-            ratio < 2.75;
-          if (printedTexty || handwrittenTexty) textyBlocks++;
-        }
-      }
-
-      const textyFraction = totalBlocks ? textyBlocks / totalBlocks : 0;
-      const textAreaCoverage = textyFraction;
       const notBlank = contrast > 5.5 && contrast < 142;
-      const edgePlausible = avgEdge > 4.3 && avgEdge < 90;
+      const edgePlausible = avgEdge > 4.8 && avgEdge < 86;
+      return { avgEdge, contrast, notBlank, edgePlausible };
+    }
 
-      function clamp01(x) {
-        return Math.max(0, Math.min(1, x));
-      }
-      const cTf = clamp01((textyFraction - 0.020) / 0.40);
-      const cRow = clamp01((rowSpikeRatio - 0.010) / 0.105);
-      const cHoriz = clamp01((horizBias - 0.96) / 0.17);
-      const cEdge =
-        avgEdge > 5.5 && avgEdge < 76
-          ? Math.min(clamp01((avgEdge - 4.8) / 29), clamp01((78 - avgEdge) / 28))
-          : 0;
-      const cCon =
-        contrast > 6.5 && contrast < 125
-          ? Math.min(clamp01((contrast - 5) / 44), clamp01((128 - contrast) / 34))
-          : 0;
-      let confidence = 0.25 * cTf + 0.22 * cRow + 0.09 * cHoriz + 0.21 * cEdge + 0.23 * cCon;
-      if (notBlank && edgePlausible) confidence = Math.min(1, confidence + 0.06);
-      const softTextCue =
-        notBlank && edgePlausible && (rowSpikeRatio >= 0.017 || textyFraction >= 0.014);
-      const structuredDocCue =
-        rowSpikeRatio >= 0.024 &&
-        textyFraction >= 0.01 &&
-        contrast > 5.5 &&
-        contrast < 142 &&
-        avgEdge > 4 &&
-        avgEdge < 92;
-      const weakSceneCue =
-        (rowSpikeRatio >= 0.011 || textyFraction >= 0.009) &&
-        contrast > 4.5 &&
-        contrast < 155 &&
-        avgEdge > 3.2 &&
-        avgEdge < 98;
-      const wantShow = softTextCue || structuredDocCue || weakSceneCue;
-
-      return {
-        avgEdge,
-        contrast,
-        textyFraction,
-        rowSpikeRatio,
-        horizBias,
-        notBlank,
-        edgePlausible,
-        softTextCue,
-        structuredDocCue,
-        weakSceneCue,
-        confidence,
-        textAreaCoverage,
-        wantShow,
-      };
+    /**
+     * Non-OCR path: global luma range + moderate local variance and edge density (flat walls skew low edge/contrast).
+     */
+    function previewContrastSceneSignal(luma, w, h, imageData) {
+      if (!previewLumaContrastTextCue(luma)) return false;
+      const st = previewFrameContrastEdgeOnly(w, h, imageData);
+      if (!st.notBlank || !st.edgePlausible) return false;
+      return st.contrast > 8.5 && st.contrast < 132 && st.avgEdge > 5.2 && st.avgEdge < 76;
     }
 
     function resolvePublicUrl(relPath) {
@@ -2720,6 +3094,17 @@ Rules:
         lumaRange: Math.round(range * 10) / 10,
         note,
       };
+    }
+
+    /** Global luma range (sampled) — part of contrastSceneSignal with edge/variance (no grid). */
+    function previewLumaContrastTextCue(luma) {
+      if (!luma || typeof luma.lumaRange !== "number" || typeof luma.lumaMean !== "number") return false;
+      const r = luma.lumaRange;
+      const m = luma.lumaMean;
+      if (m < 14 || m > 247) return false;
+      if (r < 30) return false;
+      if (r >= 50) return true;
+      return r >= 34 && m > 20 && m < 244;
     }
 
     function analyzePreviewCanvasLuma(pc, pctx) {
@@ -2925,18 +3310,18 @@ Rules:
       return (s || "").replace(/\s/g, "").length;
     }
 
-    /** Any merged OCR string or per-word/line fragment (Tesseract often leaves data.text empty but blocks have symbols). */
-    function previewOcrGlyphSignal(rawText, data) {
-      if (ocrNonWhitespaceLen(rawText) >= 1) return true;
+    /** OCR path: require ≥2 non-whitespace chars (merged text or any nested fragment). */
+    function previewOcrTextSignal(rawText, data) {
+      if (ocrNonWhitespaceLen(rawText) >= 2) return true;
       if (!data || !Array.isArray(data.blocks)) return false;
       for (const b of data.blocks) {
-        if (ocrNonWhitespaceLen(b && b.text) >= 1) return true;
+        if (ocrNonWhitespaceLen(b && b.text) >= 2) return true;
         for (const p of b.paragraphs || []) {
-          if (ocrNonWhitespaceLen(p.text) >= 1) return true;
+          if (ocrNonWhitespaceLen(p.text) >= 2) return true;
           for (const line of p.lines || []) {
-            if (ocrNonWhitespaceLen(line.text) >= 1) return true;
+            if (ocrNonWhitespaceLen(line.text) >= 2) return true;
             for (const w of line.words || []) {
-              if (ocrNonWhitespaceLen(w.text) >= 1) return true;
+              if (ocrNonWhitespaceLen(w.text) >= 2) return true;
             }
           }
         }
@@ -2944,19 +3329,15 @@ Rules:
       return false;
     }
 
-    /** softTextCue + structuredDocCue + weakSceneCue — tuned for recall (labels, nutrition panels). */
+    /** Debug: edge + variance stats only (no grid heuristics). */
     function previewHeuristicTextCues(w, h, imageData) {
-      const sig = previewFrameTextSignals(w, h, imageData);
-      return {
-        softTextCue: !!sig.softTextCue,
-        structuredDocCue: !!sig.structuredDocCue,
-        weakSceneCue: !!sig.weakSceneCue,
-      };
+      return previewFrameContrastEdgeOnly(w, h, imageData);
     }
 
     function previewHeuristicLooksLikeText(w, h, imageData) {
-      const sig = previewFrameTextSignals(w, h, imageData);
-      return !!(sig.softTextCue || sig.structuredDocCue || sig.weakSceneCue);
+      const fake = { width: w, height: h, data: imageData };
+      const luma = analyzeImageDataLuma(fake);
+      return previewContrastSceneSignal(luma, w, h, imageData);
     }
 
     function previewAlnumCount(str) {
@@ -3067,37 +3448,35 @@ Rules:
           return;
         }
         const luma = analyzeImageDataLuma(rawImg);
-        let softTextCue = false;
-        let structuredDocCue = false;
-        let weakSceneCue = false;
+        let edgeStats = { avgEdge: 0, contrast: 0, notBlank: false, edgePlausible: false };
         try {
-          const cues = previewHeuristicTextCues(w, h, rawImg.data);
-          softTextCue = cues.softTextCue;
-          structuredDocCue = cues.structuredDocCue;
-          weakSceneCue = cues.weakSceneCue;
+          edgeStats = previewHeuristicTextCues(w, h, rawImg.data);
         } catch (cueErr) {
-          console.warn("[CameraIntent/OCR] previewHeuristicTextCues:", cueErr);
+          console.warn("[CameraIntent/OCR] previewFrameContrastEdgeOnly:", cueErr);
         }
+        const contrastSignal = previewContrastSceneSignal(luma, w, h, rawImg.data);
 
         console.info("[CameraIntent/Frame] camera→canvas", {
           drawImage: { sx: 0, sy: 0, sw: vw, sh: vh, dx: 0, dy: 0, dw: w, dh: h },
           video: { readyState: video.readyState, paused: video.paused },
           luma,
+          contrastSignal,
+          edgeStats,
           heuristicsFrom: "raw_frame_before_binarize",
         });
 
         if (!worker) {
-          const wantShow = softTextCue || structuredDocCue || weakSceneCue;
-          tickTextHintBubble(wantShow, {
+          const ocrSignal = false;
+          const rawPositive = ocrSignal || contrastSignal;
+          tickTextHintBubble(rawPositive, {
             pipeline: "preview_heuristic_fallback",
-            note: "OCR unavailable — heuristic only (recall mode).",
+            note: "OCR unavailable — luma + edge/variance only (no grid).",
             frameW: w,
             frameH: h,
             luma,
-            hasTextSignal: false,
-            softTextCue,
-            structuredDocCue,
-            weakSceneCue,
+            ocrSignal,
+            contrastSignal,
+            edgeStats,
           });
           return;
         }
@@ -3158,26 +3537,32 @@ Rules:
 
         const rawText = (data && data.text ? data.text : "").replace(/\s+/g, " ").trim();
         const chars = previewAlnumCount(rawText);
-        const hasTextSignal = previewOcrGlyphSignal(rawText, data);
-        const wantShow = hasTextSignal || softTextCue || structuredDocCue || weakSceneCue;
-        const conf01 = ocrConfidence01(data);
+        const ocrSignal = previewOcrTextSignal(rawText, data);
+        const rawPositive = ocrSignal || contrastSignal;
 
         console.info("[CameraIntent/OCR] recognize:end", {
           ms: ocrMs,
           dataText: rawText,
           dataConfidenceRaw: data ? data.confidence : null,
-          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
+          conf01InfoOnly: (() => {
+            const c = ocrConfidence01(data);
+            return Number.isFinite(c) ? Math.round(c * 1000) / 1000 : null;
+          })(),
           alnumChars: chars,
           blockCount: data && data.blocks ? data.blocks.length : 0,
-          hasTextSignal,
-          softTextCue,
-          structuredDocCue,
-          weakSceneCue,
-          wantShow,
-          gating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms",
+          ocrSignal,
+          contrastSignal,
+          edgeStats,
+          rawPositive,
+          gating:
+            "ocr(nw≥2) || contrastScene(lumaΔ+edge+variance); no grid; streak≥" +
+            TEXT_HINT_SHOW_MIN_STREAK +
+            "; hold " +
+            TEXT_HINT_HOLD_MS +
+            "ms",
         });
 
-        tickTextHintBubble(wantShow, {
+        tickTextHintBubble(rawPositive, {
           pipeline: "tesseract_preview_ocr",
           engine: "Tesseract.js eng (LSTM), on-device",
           frameW: w,
@@ -3185,11 +3570,9 @@ Rules:
           luma,
           ocrMs,
           textPreview: rawText.slice(0, 100),
-          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
-          hasTextSignal,
-          softTextCue,
-          structuredDocCue,
-          weakSceneCue,
+          ocrSignal,
+          contrastSignal,
+          edgeStats,
           alnumChars: chars,
         });
       } catch (e) {
@@ -3214,16 +3597,19 @@ Rules:
         return;
       }
       hintExamineBusy = true;
+      examineOcrElements = [];
+      examineSelectedIndex = -1;
       resetTextHintBubbleDebounce();
-      logTextDetect("gemini_request", { pipeline: "gemini_multimodal", path: "POST /analyze", phase: "start" });
+      logTextDetect("examine_ocr", { pipeline: "tesseract_examine", phase: "start" });
       if (textHintBar) textHintBar.classList.add("is-examining");
       if (textHintIcon) textHintIcon.classList.add("is-armed");
       analyzingBadge.classList.add("show");
-      analyzingText.textContent = "Reading with Gemini…";
+      analyzingText.textContent = "Reading…";
+      clearLensIntentStrip();
       showIntents(false);
 
       try {
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 280));
         if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2 || video.videoHeight < 2) {
           console.warn("[CameraIntent/Frame] examine skip after delay — video still not ready");
           showToast("Camera frame not available", null);
@@ -3238,63 +3624,91 @@ Rules:
           videoReadyState: video.readyState,
           luma: exLuma,
         });
-        const b64 = jpegBase64FromCanvas(0.88);
-        let parsed = null;
+        const minSpinnerMs = 200;
+        const t0 = performance.now();
+        let ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height };
+        let examineOcrTechnicalFailure = false;
         try {
-          parsed = await analyzeFrameViaServer(b64);
+          const [pack] = await Promise.all([
+            runTesseractExamineOnCanvas(canvas),
+            new Promise((r) => setTimeout(r, minSpinnerMs)),
+          ]);
+          ocrPack = pack;
         } catch (err) {
-          console.warn("Gemini examine failed:", err);
-          logTextDetect("gemini_error", { message: err && err.message ? err.message : String(err) });
-          resetTextHintBubbleDebounce();
-          setTextHintBarVisible(false);
-          showToast(err && err.message ? err.message : "Could not reach Gemini", null);
-          return;
+          console.warn("[CameraIntent/Examine] OCR failed:", err);
+          logTextDetect("examine_ocr_error", { message: err && err.message ? err.message : String(err) });
+          examineOcrTechnicalFailure = true;
+          showToast(EXAMINE_TOAST_TECHNICAL, null);
+          ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height };
+        }
+        const elapsed = performance.now() - t0;
+        if (elapsed < minSpinnerMs) {
+          await new Promise((r) => setTimeout(r, minSpinnerMs - elapsed));
         }
 
-        const clean = (parsed.extractedText || "").replace(/\|/g, "I").trim();
-        const tdc = Number(parsed.textDetectionConfidence);
-        const tdcOk = Number.isFinite(tdc) ? tdc : 0;
-        const acceptExtract =
-          clean.length >= MIN_TEXT_LEN ||
-          (parsed.hasMeaningfulText === true && clean.length >= 5) ||
-          (clean.length >= 5 && tdcOk >= 0.52);
-        if (clean.length < 5 || !acceptExtract) {
-          logTextDetect("gemini_reject", summarizeGeminiTextDetect(parsed));
-          resetTextHintBubbleDebounce();
-          setTextHintBarVisible(false);
-          showToast("No clear text in frame", null);
-          return;
-        }
+        examineOcrImageW = ocrPack.imageW;
+        examineOcrImageH = ocrPack.imageH;
+        examineOcrElements = ocrPack.elements || [];
+        const rawFull = (ocrPack.data && ocrPack.data.text ? String(ocrPack.data.text) : "")
+          .replace(/\s+/g, " ")
+          .trim();
 
-        logTextDetect("gemini_ok", summarizeGeminiTextDetect(parsed));
-
-        lastText = clean || lastText;
-        const ent = parseEntities(lastText);
-        const merged = mergeGeminiIntoExtracted(parsed);
-        extracted = {
-          title: merged.title || ent.title,
-          when: merged.when || ent.when,
-          location: merged.location || ent.location,
+        lastAnalyzeImageResult = {
+          texts: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: [
+              e.bbox.x / examineOcrImageW,
+              e.bbox.y / examineOcrImageH,
+              e.bbox.width / examineOcrImageW,
+              e.bbox.height / examineOcrImageH,
+            ],
+          })),
+          intents: [],
         };
-        lastClassification = classifyScan(lastText);
-        parsedTodoLines = parseTodoItems(lastText);
-        if (parsedTodoLines.length === 0) {
-          parsedTodoLines = lastText
-            .split(/\n/)
-            .map((l) => l.trim())
-            .filter((l) => l.length > 0)
-            .slice(0, 20);
+
+        renderOcrExamineOverlays(examineOcrElements);
+
+        if (examineOcrElements.length) {
+          selectExamineElement(0);
+        } else {
+          if (!examineOcrTechnicalFailure) {
+            const alnum = previewAlnumCount(rawFull);
+            const conf01 = ocrConfidence01(ocrPack.data);
+            const blockCount =
+              ocrPack.data && Array.isArray(ocrPack.data.blocks) ? ocrPack.data.blocks.length : 0;
+            const lowConf = Number.isFinite(conf01) && conf01 < OCR_EXAMINE_LOW_CONF_THRESHOLD;
+            const looksBlurredOrSmall =
+              lowConf || alnum >= 2 || blockCount > 0;
+            showToast(looksBlurredOrSmall ? EXAMINE_TOAST_BLURRY : EXAMINE_TOAST_NO_TEXT, null);
+          }
+          lastText = rawFull;
+          applyExamineSelectionToAppState(lastText);
+          lastGeminiResult = {
+            extractedText: lastText,
+            textRegions: [],
+            hasMeaningfulText: lastText.length >= 5,
+            textDetectionConfidence: lastText ? 0.55 : 0.2,
+            writingStyle: "unknown",
+            structured: {},
+          };
+          const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
+          if (intentHint) {
+            intentHint.textContent = preview
+              ? preview + (lastText.length > 220 ? "…" : "")
+              : "Pick an action below or try again";
+            intentHint.classList.remove("hidden");
+          }
+          showLensIntentStrip([...GENERIC_LENS_INTENTS], 3);
         }
-        lastGeminiResult = parsed;
 
-        renderTextRegions(regionsForHighlight(parsed, lastText));
+        logTextDetect("examine_ocr_ok", {
+          pipeline: "tesseract_examine",
+          textLen: rawFull.length,
+          regionCount: examineOcrElements.length,
+          engine: "Tesseract.js on-device",
+        });
 
-        const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
-        intentHint.textContent = preview + (lastText.length > 220 ? "…" : "");
-        intentHint.classList.remove("hidden");
-
-        applyRuleBasedIntents(parsed, lastText);
-        showIntents(true);
+        showIntents(false);
         showExaminationResultShell();
       } finally {
         analyzingBadge.classList.remove("show");
@@ -3308,6 +3722,7 @@ Rules:
     function capturePhoto() {
       if (!video.videoWidth) return;
       dismissExaminationUI();
+      clearLensIntentStrip();
       setTextHintBarVisible(false);
       resetTextHintBubbleDebounce();
       showIntents(false);
@@ -3574,15 +3989,20 @@ Rules:
           logTextDetect("boot", {
             previewPollMs: PREVIEW_POLL_MS,
             previewOcr: "Tesseract.js continuous OCR on downscaled frames",
-            hintBubbleGating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms after last positive",
+            hintBubbleGating:
+              "ocr(nw≥2) || contrastScene(luma+edge+variance, no grid); show after " +
+              TEXT_HINT_SHOW_MIN_STREAK +
+              " consecutive positives; hold " +
+              TEXT_HINT_HOLD_MS +
+              "ms",
             ocrMaxWidth: OCR_PREVIEW_MAX_WIDTH,
             ocrLogHint: "Add ?ocrLog=1 for Tesseract worker progress logs",
             ocrTestHint: "Add ?ocrTest=1 for canvas + /test-ocr.png sanity checks",
             frameDebugHint: "Add ?frameDebug=1 to show OCR input canvas + luma on screen",
-            heuristicFallback: "Only if Tesseract fails to load",
+            heuristicFallback: "If Tesseract fails: luma+edge/variance only (no grid heuristics)",
             debounceShowMs: HINT_DEBOUNCE_SHOW_MS,
             debounceHideMs: HINT_DEBOUNCE_HIDE_MS,
-            gemini: "POST /analyze when user taps Examine text",
+            examineText: "On-device Tesseract OCR when user taps Examine text (no cloud / no LLM)",
           });
         }
         window.setInterval(() => {
@@ -3620,6 +4040,83 @@ Rules:
     suggestDismissScrim.addEventListener("click", () => {
       dismissExaminationUI();
     });
+
+    if (lensIntentStrip) {
+      lensIntentStrip.addEventListener("click", (e) => {
+        const pill = e.target.closest(".lens-intent-pill");
+        if (!pill) return;
+        e.stopPropagation();
+        const action = pill.getAttribute("data-action") || "copy";
+        const idxAttr = lensIntentStrip.getAttribute("data-lens-item-index");
+        const selIdx = idxAttr != null && idxAttr !== "" ? parseInt(idxAttr, 10) : NaN;
+        const selectionText =
+          examinationUIActive && Number.isFinite(selIdx) && selIdx >= 0 && examineOcrElements[selIdx]
+            ? examineOcrElements[selIdx].text
+            : lastText;
+
+        if (action === "copy") {
+          const t = selectionText || "";
+          if (!t) {
+            showToast("Nothing to copy", null);
+            return;
+          }
+          navigator.clipboard.writeText(t).then(
+            () => {
+              showToast("Copied to clipboard", null);
+              dismissExaminationUI();
+            },
+            () => showToast("Copy blocked", null)
+          );
+          return;
+        }
+
+        if (action === "call") {
+          const raw = selectionText || "";
+          const digits = raw.replace(/\D/g, "");
+          if (digits.length < 10) {
+            showToast("No phone number found", null);
+            return;
+          }
+          window.location.href = "tel:" + digits;
+          dismissExaminationUI();
+          return;
+        }
+
+        if (action === "contact") {
+          const t = selectionText || "";
+          if (!t) {
+            showToast("Nothing to copy", null);
+            return;
+          }
+          navigator.clipboard.writeText(t).then(
+            () => {
+              showToast("Copied — paste into Contacts", null);
+              dismissExaminationUI();
+            },
+            () => showToast("Copy blocked", null)
+          );
+          return;
+        }
+
+        if (action === "maps") {
+          const q = (selectionText || "").trim();
+          if (!q) {
+            showToast("Nothing to open in Maps", null);
+            return;
+          }
+          lastMapsQuery = q;
+          const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+          window.open(url, "_blank", "noopener,noreferrer");
+          dismissExaminationUI();
+          return;
+        }
+
+        lastText = selectionText || lastText;
+        applyExamineSelectionToAppState(lastText);
+        dismissExaminationUI();
+        openModal(action);
+      });
+    }
 
     quickSuggestLayer.querySelectorAll("[data-quick]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
