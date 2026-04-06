@@ -2745,7 +2745,7 @@
     const OCR_PREVIEW_MAX_WIDTH = 960;
     const OCR_EXAMINE_MAX_EDGE = 1280;
     const OCR_EXAMINE_RECOGNIZE_TIMEOUT_MS = 15000;
-    const OCR_EXAMINE_MAX_REGIONS = 5;
+    const OCR_EXAMINE_MAX_REGIONS = 14;
     const EXAMINE_OCR_REFRESH_DEBOUNCE_MS = 420;
     const EXAMINE_DOC_MIN_SIDE = 28;
     const OCR_EXAMINE_MIN_LINE_CONFIDENCE = 36;
@@ -3374,6 +3374,25 @@
       return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
     }
 
+    /** Keep document selection above the shutter row so highlights stay in the camera area. */
+    function clampExamineRectAboveShutter(rect, iw, ih) {
+      const row = document.querySelector(".shutter-row");
+      if (!row || !video || !rect) return clampExamineRect(rect, iw, ih);
+      const sr = row.getBoundingClientRect();
+      const pt = videoClientToImagePoint(sr.left + sr.width * 0.5, sr.top - 2);
+      if (!pt || !Number.isFinite(pt.y)) return clampExamineRect(rect, iw, ih);
+      const maxBottom = Math.max(EXAMINE_DOC_MIN_SIDE * 2, Math.min(pt.y, ih));
+      let r = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      if (r.y >= maxBottom) {
+        r.y = Math.max(0, maxBottom - EXAMINE_DOC_MIN_SIDE);
+        r.height = EXAMINE_DOC_MIN_SIDE;
+      }
+      if (r.y + r.height > maxBottom) {
+        r.height = Math.max(EXAMINE_DOC_MIN_SIDE, maxBottom - r.y);
+      }
+      return clampExamineRect(r, iw, ih);
+    }
+
     function clampExamineRect(rect, iw, ih) {
       const MIN = EXAMINE_DOC_MIN_SIDE;
       let x = rect.x;
@@ -3455,12 +3474,17 @@
           height: Math.max(MIN, iy - fy),
         };
       }
-      return r ? clampExamineRect(r, examineOcrImageW, examineOcrImageH) : null;
+      return r
+        ? clampExamineRectAboveShutter(clampExamineRect(r, examineOcrImageW, examineOcrImageH), examineOcrImageW, examineOcrImageH)
+        : null;
     }
+
+    /** Fallback when OCR returns no string yet; default pair is Copy + Convert to doc. */
+    const EXAMINE_DOCUMENT_DEFAULT_INTENTS = ["Copy text", "Convert to doc"];
 
     function examineDocumentActionsFromText(fullText) {
       const t = String(fullText || "").trim();
-      if (!t) return ["Copy text", "Convert to doc"];
+      if (!t) return EXAMINE_DOCUMENT_DEFAULT_INTENTS.slice();
       const intentType = classifyExamineRegionIntent(t);
       return examineActionsForType(intentType).slice(0, 2);
     }
@@ -3501,7 +3525,11 @@
       examineRefreshInFlight = true;
       try {
         if (isLensExamineOverlayOpen()) return;
-        const r = clampExamineRect(examineUserDocRect, examineOcrImageW, examineOcrImageH);
+        const r = clampExamineRectAboveShutter(
+          clampExamineRect(examineUserDocRect, examineOcrImageW, examineOcrImageH),
+          examineOcrImageW,
+          examineOcrImageH
+        );
         examineUserDocRect = r;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -3528,7 +3556,11 @@
           packText = examineOcrElements.map((e) => e.text).join("\n");
         }
         examineFullText = packText;
-        applyExamineSelectionToAppState(examineFullText);
+        if (examineSelectedIndex >= 0 && examineOcrElements[examineSelectedIndex]) {
+          applyExamineSelectionToAppState(examineOcrElements[examineSelectedIndex].text);
+        } else {
+          applyExamineSelectionToAppState(examineFullText);
+        }
         lastAnalyzeImageResult = {
           texts: examineOcrElements.map((e) => ({
             text: e.text,
@@ -3553,7 +3585,13 @@
           structured: {},
         };
         renderExamineOverlays();
-        showLensIntentStrip(examineDocumentActionsFromText(examineFullText), 2, null, "document");
+        if (examineSelectedIndex >= 0 && examineSelectedIndex < examineOcrElements.length) {
+          const el = examineOcrElements[examineSelectedIndex];
+          const actions = examineActionsForType(classifyExamineRegionIntent(el.text)).slice(0, 2);
+          showLensIntentStrip(actions, 2, examineSelectedIndex, "document");
+        } else {
+          showLensIntentStrip(examineDocumentActionsFromText(examineFullText), 2, null, "document");
+        }
       } finally {
         examineRefreshInFlight = false;
       }
@@ -3603,13 +3641,17 @@
       if (type === "move") {
         const dx = pt.x - startPtr.x;
         const dy = pt.y - startPtr.y;
-        examineUserDocRect = clampExamineRect(
-          {
-            x: startRect.x + dx,
-            y: startRect.y + dy,
-            width: startRect.width,
-            height: startRect.height,
-          },
+        examineUserDocRect = clampExamineRectAboveShutter(
+          clampExamineRect(
+            {
+              x: startRect.x + dx,
+              y: startRect.y + dy,
+              width: startRect.width,
+              height: startRect.height,
+            },
+            iw,
+            ih
+          ),
           iw,
           ih
         );
@@ -3684,7 +3726,12 @@
       ev.preventDefault();
       ev.stopPropagation();
       const idx = parseInt(ev.currentTarget.getAttribute("data-examine-index") || "-1", 10);
-      if (idx >= 0) selectExamineElement(idx);
+      if (idx < 0) return;
+      if (examineSelectedIndex === idx) {
+        selectExamineDocument();
+      } else {
+        selectExamineElement(idx);
+      }
     }
 
     function renderExamineOverlays() {
@@ -3743,7 +3790,7 @@
             const topPct = (rel.y / docRect.height) * 100;
             const wPct = (rel.width / docRect.width) * 100;
             const hPct = (rel.height / docRect.height) * 100;
-            if (wPct < 0.5 || hPct < 0.5) return;
+            if (wPct < 0.22 || hPct < 0.22) return;
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "ocr-text-highlight";
@@ -3808,7 +3855,7 @@
       applyExamineSelectionToAppState(examineFullText);
       showLensIntentStrip(examineDocumentActionsFromText(examineFullText), 2, null, "document");
       if (intentHint) {
-        intentHint.textContent = "Drag corners or edges to adjust • Tap highlighted text to refine";
+        intentHint.textContent = "Drag the frame to resize • Tap a line to select only that text";
         intentHint.classList.remove("hidden");
       }
       lastGeminiResult = {
@@ -3826,25 +3873,19 @@
 
     function selectExamineElement(index) {
       if (!examineOcrElements.length || index < 0 || index >= examineOcrElements.length) return;
-      examineMode = "region";
+      examineMode = "document";
       examineSelectedIndex = index;
       const el = examineOcrElements[index];
       applyExamineSelectionToAppState(el.text);
       const intentType = classifyExamineRegionIntent(el.text);
       const actions = examineActionsForType(intentType).slice(0, 2);
-      showLensIntentStrip(actions, 2, index, "region");
+      showLensIntentStrip(actions, 2, index, "document");
       renderExamineOverlays();
-      if (textRegionLayer) {
-        textRegionLayer.classList.add("is-region-reveal");
-        window.setTimeout(() => {
-          if (textRegionLayer) textRegionLayer.classList.remove("is-region-reveal");
-        }, 220);
-      }
       const preview = (el.text || "").replace(/\s+/g, " ").trim().slice(0, 220);
       if (intentHint) {
         intentHint.textContent = preview
           ? preview + ((el.text || "").length > 220 ? "…" : "")
-          : "Select a region";
+          : "Tap a highlight or adjust the frame";
         intentHint.classList.remove("hidden");
       }
       lastGeminiResult = {
@@ -5197,6 +5238,12 @@ Rules:
           if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
         }
         examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
+        if (!examineUserDocRect && examineOcrElements.length) {
+          examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
+        }
+        if (examineUserDocRect) {
+          examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
+        }
 
         lastAnalyzeImageResult = {
           texts: examineOcrElements.map((e) => ({
@@ -5212,17 +5259,12 @@ Rules:
         };
 
         examineMode = "document";
+        examineSelectedIndex = -1;
         renderExamineOverlays();
 
-        if (examineDocumentBbox && examineOcrElements.length) {
+        if (examineUserDocRect && examineOcrElements.length) {
           selectExamineDocument();
-        } else if (examineOcrElements.length) {
-          examineUserDocRect = null;
-          examineMode = "region";
-          renderExamineOverlays();
-          selectExamineElement(0);
-        } else if (examineDocumentBbox && rawFull.length) {
-          examineMode = "document";
+        } else if (examineUserDocRect && rawFull.length) {
           renderExamineOverlays();
           selectExamineDocument();
         } else {
@@ -6103,7 +6145,11 @@ Rules:
         const examineStripMode = lensIntentStrip.getAttribute("data-lens-examine-mode");
         let selectionText = lastText;
         if (examinationUIActive && examineStripMode === "document") {
-          selectionText = examineFullText || lastText;
+          if (Number.isFinite(selIdx) && selIdx >= 0 && examineOcrElements[selIdx]) {
+            selectionText = examineOcrElements[selIdx].text;
+          } else {
+            selectionText = examineFullText || lastText;
+          }
         } else if (
           examinationUIActive &&
           examineStripMode === "region" &&
