@@ -656,6 +656,178 @@
       opacity: 0.92;
     }
 
+    /* —— Plan B (port 3001): hide pre-capture intent UI; Scene Assist uses post-capture sheet only —— */
+    .app.plan-b .pixel-text-hint,
+    .app.plan-b .quick-suggest-layer,
+    .app.plan-b .suggest-dismiss-scrim,
+    .app.plan-b .lens-intent-strip,
+    .app.plan-b .intent-wrap {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    .camera-modes.plan-b .mode-item.mode-item--disabled {
+      opacity: 0.42;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .scene-assist-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 29;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.28s ease, visibility 0.28s ease;
+    }
+
+    .scene-assist-backdrop.is-open {
+      pointer-events: auto;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .scene-assist-backdrop__scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.38);
+    }
+
+    .scene-assist-sheet {
+      position: relative;
+      width: 100%;
+      max-height: min(58vh, 420px);
+      background: #121214;
+      border-radius: 22px 22px 0 0;
+      padding: 8px 16px max(16px, env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.55);
+      transform: translateY(105%);
+      transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: none;
+    }
+
+    .scene-assist-backdrop.is-open .scene-assist-sheet {
+      transform: translateY(0);
+    }
+
+    .scene-assist-sheet__grab {
+      width: 36px;
+      height: 3px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.22);
+      margin: 4px auto 10px;
+    }
+
+    .scene-assist-sheet__title {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      color: #fafafa;
+      letter-spacing: 0.02em;
+    }
+
+    .scene-assist-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(38, 38, 42, 0.95);
+      color: #fff;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease, transform 0.12s ease;
+    }
+
+    .scene-assist-card:active {
+      transform: scale(0.99);
+      background: rgba(48, 48, 54, 0.98);
+    }
+
+    .scene-assist-card__ico {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .scene-assist-card__ico svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .scene-assist-card__text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+    }
+
+    .scene-assist-card__title {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .scene-assist-card__desc {
+      display: block;
+      margin-top: 0;
+      font-size: 11px;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .scene-assist-card__pin {
+      flex-shrink: 0;
+      align-self: center;
+      opacity: 0.65;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .scene-assist-sheet__rescan {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: transparent;
+      color: #f4f4f5;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .scene-assist-sheet__rescan svg {
+      width: 16px;
+      height: 16px;
+    }
+
     /* Examine Text: centered Pixel-style dialog (12px type like intent pills; clears shutter stack) */
     .lens-examine-overlay {
       position: absolute;
@@ -2708,6 +2880,28 @@
       <span id="toastMsg">Saved</span>
       <a href="#" id="toastView">View here</a>
     </div>
+
+    <div class="scene-assist-backdrop" id="sceneAssistBackdrop" aria-hidden="true">
+      <div class="scene-assist-backdrop__scrim" id="sceneAssistScrim" tabindex="-1"></div>
+      <div
+        class="scene-assist-sheet"
+        id="sceneAssistSheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sceneAssistSheetTitle"
+      >
+        <div class="scene-assist-sheet__grab" aria-hidden="true"></div>
+        <h2 class="scene-assist-sheet__title" id="sceneAssistSheetTitle">Do you want to...</h2>
+        <div id="sceneAssistCards" role="group" aria-label="Suggested actions"></div>
+        <button type="button" class="scene-assist-sheet__rescan" id="btnSceneAssistRescan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 12a9 9 0 11-3-6.7" stroke-linecap="round"/>
+            <path d="M21 3v6h-6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Rescan
+        </button>
+      </div>
+    </div>
           </div><!-- .app -->
         </div><!-- .device-screen -->
       </div><!-- .device-bezel -->
@@ -2881,6 +3075,14 @@
     const lensExamineScroll = document.getElementById("lensExamineScroll");
     const lensExamineBar = document.getElementById("lensExamineBar");
     const btnLensExamineClose = document.getElementById("btnLensExamineClose");
+    const sceneAssistBackdrop = document.getElementById("sceneAssistBackdrop");
+    const sceneAssistScrim = document.getElementById("sceneAssistScrim");
+    const sceneAssistSheet = document.getElementById("sceneAssistSheet");
+    const sceneAssistCards = document.getElementById("sceneAssistCards");
+    const btnSceneAssistRescan = document.getElementById("btnSceneAssistRescan");
+
+    const IS_PLAN_B = typeof location !== "undefined" && location.port === "3001";
+    let sceneAssistCentered = false;
 
     function isLensExamineOverlayOpen() {
       return !!(lensExamineOverlay && lensExamineOverlay.classList.contains("is-open"));
@@ -5178,6 +5380,9 @@ Rules:
     }
 
     async function pollPreviewTextDetection() {
+      if (IS_PLAN_B) {
+        return;
+      }
       if (!isPhotoMode()) {
         setTextHintBarVisible(false);
         resetTextHintBubbleDebounce();
@@ -5591,8 +5796,188 @@ Rules:
       }
     }
 
+    function sceneAssistSubtitleForAction(action) {
+      const a = String(action || "copy");
+      const map = {
+        copy: "Copy recognized text to the clipboard",
+        event: "Create a calendar event from dates & details",
+        reminder: "Set a reminder from what you captured",
+        todolist: "Create a checklist from detected lines",
+        task: "Turn content into a trackable task",
+        maps: "Open location or address in Maps",
+        note: "Save as a note on this device",
+        share: "Share the extracted text",
+        gdoc: "Copy text and open Google Docs",
+        savefile: "Export or share as a document file",
+        call: "Dial a detected phone number",
+        contact: "Copy for Contacts",
+        email: "Start an email with this text",
+      };
+      return map[a] || "Continue with this action";
+    }
+
+    function sceneAssistIconSvgForAction(action) {
+      const a = String(action || "copy");
+      if (a === "event" || a === "reminder")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/><path d="M12 17h6M12 13h4" stroke-linecap="round"/></svg>';
+      if (a === "todolist" || a === "task")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+      if (a === "maps")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+      if (a === "note")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+      if (a === "gdoc")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>';
+      if (a === "share")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>';
+      if (a === "savefile")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v10M8 7l4-4 4 4"/><path d="M5 21h14a2 2 0 002-2v-6"/></svg>';
+      if (a === "call" || a === "contact" || a === "email")
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.86.3 1.7.54 2.5a2 2 0 01-.45 2.11L8.09 10.9a16 16 0 006 6l2.57-2.11a2 2 0 012.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0122 16.92z"/></svg>';
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    }
+
+    const PIN_SVG =
+      '<svg class="scene-assist-card__pin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 17l-4 4v-6a4 4 0 118 0v6l-4-4z" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></svg>';
+
+    function closeSceneAssistIntentSheet() {
+      if (!sceneAssistBackdrop) return;
+      sceneAssistBackdrop.classList.remove("is-open");
+      sceneAssistBackdrop.setAttribute("aria-hidden", "true");
+      if (sceneAssistCards) sceneAssistCards.innerHTML = "";
+    }
+
+    function openSceneAssistIntentSheet(intentLabels) {
+      if (!sceneAssistBackdrop || !sceneAssistCards) return;
+      const src = intentLabels && intentLabels.length ? intentLabels : GENERIC_LENS_INTENTS;
+      const list = src.slice(0, 3);
+      sceneAssistCards.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const rawLabel of list) {
+        const action = mapLensIntentLabelToAction(rawLabel);
+        const title = displayLensIntentLabel(rawLabel);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "scene-assist-card";
+        btn.setAttribute("data-action", action);
+        btn.innerHTML =
+          '<span class="scene-assist-card__ico">' +
+          sceneAssistIconSvgForAction(action) +
+          "</span>" +
+          '<span class="scene-assist-card__text"><span class="scene-assist-card__title">' +
+          escapeHtmlLens(title) +
+          '</span><span class="scene-assist-card__desc">' +
+          escapeHtmlLens(sceneAssistSubtitleForAction(action)) +
+          "</span></span>" +
+          PIN_SVG;
+        frag.appendChild(btn);
+      }
+      sceneAssistCards.appendChild(frag);
+      sceneAssistBackdrop.classList.add("is-open");
+      sceneAssistBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function dispatchSceneAssistIntent(action) {
+      const act = action || "copy";
+      closeSceneAssistIntentSheet();
+      const selectionText = examineFullText || lastText;
+      handleExamineLensAction(act, selectionText);
+    }
+
+    async function capturePhotoSceneAssist() {
+      dismissExaminationUI();
+      clearLensIntentStrip();
+      setTextHintBarVisible(false);
+      resetTextHintBubbleDebounce();
+      showIntents(false);
+      btnShutter.disabled = true;
+      triggerShutterFlash();
+      analyzingBadge.classList.add("show");
+      if (analyzingText) analyzingText.textContent = "Analyzing…";
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        thumbPreview.style.backgroundImage = `url(${canvas.toDataURL("image/jpeg", 0.5)})`;
+      } catch (_) {}
+
+      try {
+        if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2) {
+          showToast("Camera not ready", null);
+          return;
+        }
+        let ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
+        try {
+          ocrPack = await runTesseractExamineOnCanvas(canvas);
+        } catch (err) {
+          console.warn("[SceneAssist] OCR failed:", err);
+          showToast("Could not read text in frame", null);
+          return;
+        }
+        examineOcrImageW = ocrPack.imageW;
+        examineOcrImageH = ocrPack.imageH;
+        examineOcrElements = ocrPack.elements || [];
+        examineFullText = (ocrPack.data && ocrPack.data.text ? String(ocrPack.data.text) : "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!examineFullText && examineOcrElements.length) {
+          examineFullText = examineOcrElements.map((e) => e.text).join("\n");
+        }
+        if (ocrNonWhitespaceLen(examineFullText) < 1) {
+          showToast("No text detected. Please try again", null);
+          return;
+        }
+        examineDocumentBbox = ocrPack.documentBbox || null;
+        if (!examineDocumentBbox && examineOcrElements.length) {
+          const u = mergeExamineBboxesUnion(examineOcrElements);
+          if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
+        }
+        examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
+        if (!examineUserDocRect && examineOcrElements.length) {
+          examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
+        }
+        if (examineUserDocRect) {
+          examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
+        }
+        applyExamineSelectionToAppState(examineFullText);
+        lastAnalyzeImageResult = {
+          texts: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: [
+              e.bbox.x / examineOcrImageW,
+              e.bbox.y / examineOcrImageH,
+              e.bbox.width / examineOcrImageW,
+              e.bbox.height / examineOcrImageH,
+            ],
+          })),
+          intents: [],
+        };
+        lastGeminiResult = {
+          extractedText: lastText,
+          textRegions: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: { x0: e.bbox.x, y0: e.bbox.y, x1: e.bbox.x + e.bbox.width, y1: e.bbox.y + e.bbox.height },
+          })),
+          hasMeaningfulText: lastText.length >= 2,
+          textDetectionConfidence: lastText ? 0.72 : 0.25,
+          writingStyle: "unknown",
+          structured: {},
+        };
+        const labels = examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length).slice(0, 3);
+        openSceneAssistIntentSheet(labels.length ? labels : GENERIC_LENS_INTENTS.slice(0, 3));
+      } finally {
+        analyzingBadge.classList.remove("show");
+        btnShutter.disabled = false;
+      }
+    }
+
     function capturePhoto() {
       if (!video.videoWidth) return;
+      if (IS_PLAN_B && sceneAssistCentered) {
+        capturePhotoSceneAssist();
+        return;
+      }
       dismissExaminationUI();
       clearLensIntentStrip();
       setTextHintBarVisible(false);
@@ -6972,10 +7357,18 @@ Rules:
       wrap.addEventListener("click", (e) => {
         const btn = e.target.closest(".mode-item");
         if (!btn || !wrap.contains(btn)) return;
+        if (IS_PLAN_B) {
+          const m = btn.getAttribute("data-mode");
+          if (m === "scene-assist" || m === "photo") {
+            scrollModeIntoViewCenter(btn, true);
+          }
+          return;
+        }
         notAvailableToast();
       });
 
       function centerActiveMode(instant) {
+        if (IS_PLAN_B) return;
         const active = wrap.querySelector(".mode-item.active") || wrap.querySelector('[data-mode="photo"]');
         if (active) scrollModeIntoViewCenter(active, !instant);
       }
@@ -6990,6 +7383,104 @@ Rules:
         window.clearTimeout(resizeTimer);
         resizeTimer = window.setTimeout(() => centerActiveMode(true), 80);
       });
+    })();
+
+    (function initPlanBSceneAssist() {
+      if (!IS_PLAN_B) return;
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.add("plan-b");
+
+      const wrap = document.getElementById("cameraModes");
+      if (!wrap) return;
+
+      const le = wrap.querySelector('[data-mode="long-exposure"]');
+      if (le && !wrap.querySelector('[data-mode="scene-assist"]')) {
+        const sa = document.createElement("button");
+        sa.type = "button";
+        sa.className = "mode-item";
+        sa.setAttribute("role", "tab");
+        sa.setAttribute("data-mode", "scene-assist");
+        sa.setAttribute("aria-selected", "false");
+        sa.textContent = "Scene Assist";
+        le.insertAdjacentElement("afterend", sa);
+      }
+
+      wrap.classList.add("plan-b");
+      wrap.querySelectorAll(".mode-item").forEach((btn) => {
+        const mode = btn.getAttribute("data-mode");
+        if (mode !== "scene-assist" && mode !== "photo") btn.classList.add("mode-item--disabled");
+        btn.classList.remove("active");
+        btn.setAttribute("aria-selected", "false");
+      });
+
+      function scrollModeIntoViewCenter(btn, smooth) {
+        btn.scrollIntoView({
+          inline: "center",
+          block: "nearest",
+          behavior: smooth ? "smooth" : "instant",
+        });
+      }
+
+      function updateSceneAssistFromScroll() {
+        const rect = wrap.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        let best = null;
+        let bestDist = Infinity;
+        wrap.querySelectorAll(".mode-item").forEach((btn) => {
+          const r = btn.getBoundingClientRect();
+          const cx = r.left + r.width / 2;
+          const d = Math.abs(cx - centerX);
+          if (d < bestDist) {
+            bestDist = d;
+            best = btn;
+          }
+        });
+        wrap.querySelectorAll(".mode-item").forEach((btn) => {
+          const mode = btn.getAttribute("data-mode");
+          const on = best === btn && (mode === "photo" || mode === "scene-assist");
+          btn.classList.toggle("active", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        sceneAssistCentered = !!(best && best.getAttribute("data-mode") === "scene-assist");
+      }
+
+      let scrollT = 0;
+      wrap.addEventListener(
+        "scroll",
+        () => {
+          window.clearTimeout(scrollT);
+          scrollT = window.setTimeout(() => updateSceneAssistFromScroll(), 48);
+        },
+        { passive: true }
+      );
+      window.addEventListener("resize", () => window.setTimeout(() => updateSceneAssistFromScroll(), 60));
+
+      const photoBtn = wrap.querySelector("#mode-photo") || wrap.querySelector('[data-mode="photo"]');
+      if (photoBtn) {
+        requestAnimationFrame(() => {
+          scrollModeIntoViewCenter(photoBtn, false);
+          requestAnimationFrame(() => updateSceneAssistFromScroll());
+        });
+      }
+
+      if (sceneAssistCards) {
+        sceneAssistCards.addEventListener("click", (e) => {
+          const card = e.target.closest(".scene-assist-card");
+          if (!card) return;
+          e.stopPropagation();
+          const action = card.getAttribute("data-action") || "copy";
+          dispatchSceneAssistIntent(action);
+        });
+      }
+      if (btnSceneAssistRescan) {
+        btnSceneAssistRescan.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeSceneAssistIntentSheet();
+        });
+      }
+      if (sceneAssistScrim) {
+        sceneAssistScrim.addEventListener("click", () => closeSceneAssistIntentSheet());
+      }
     })();
 
     document.getElementById("btnMoreFooter").addEventListener("click", () => {

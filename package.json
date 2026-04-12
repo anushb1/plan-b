@@ -4,7 +4,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "start:plan-b": "PORT=3001 node server.js",
+    "dev:plan-b": "PORT=3001 node server.js"
   },
   "engines": {
     "node": ">=18"
