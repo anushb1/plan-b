@@ -1,0 +1,50 @@
+# Deploy plan-b-mvp to https://<user>.github.io/<repo>/
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - plan-b-mvp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-plan-b
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Build static site
+        run: |
+          chmod +x scripts/build-github-pages.sh
+          ./scripts/build-github-pages.sh
+
+      - name: Add .nojekyll
+        run: touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

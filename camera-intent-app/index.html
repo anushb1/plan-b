@@ -3081,7 +3081,12 @@
     const sceneAssistCards = document.getElementById("sceneAssistCards");
     const btnSceneAssistRescan = document.getElementById("btnSceneAssistRescan");
 
-    const IS_PLAN_B = typeof location !== "undefined" && location.port === "3001";
+    /** Plan B: port 3001 locally; GitHub Pages uses path …/plan-b/ (repo name). */
+    const IS_PLAN_B = (function planBFromEnv() {
+      if (typeof location === "undefined") return false;
+      if (location.port === "3001") return true;
+      return /(^|\/)plan-b(\/|$)/.test(location.pathname || "");
+    })();
     let sceneAssistCentered = false;
 
     function isLensExamineOverlayOpen() {
