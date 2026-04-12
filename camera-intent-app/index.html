@@ -3081,9 +3081,15 @@
     const sceneAssistCards = document.getElementById("sceneAssistCards");
     const btnSceneAssistRescan = document.getElementById("btnSceneAssistRescan");
 
-    /** Plan B: port 3001 locally; GitHub Pages uses path …/plan-b/ (repo name). */
+    /**
+     * Plan B / Scene Assist UX: on in this branch for
+     * - GitHub Pages: …/plan-b/…
+     * - local dev: any port on localhost (npm start = 3000 or start:plan-b = 3001)
+     */
     const IS_PLAN_B = (function planBFromEnv() {
       if (typeof location === "undefined") return false;
+      const host = location.hostname || "";
+      if (host === "localhost" || host === "127.0.0.1") return true;
       if (location.port === "3001") return true;
       return /(^|\/)plan-b(\/|$)/.test(location.pathname || "");
     })();
