@@ -4069,6 +4069,33 @@
       return labels;
     }
 
+    /**
+     * Scene Assist sheet: merge rule-based intents with GENERIC_LENS_INTENTS so users always see
+     * multiple actions (e.g. calendar, list) when OCR alone only produced "Copy text".
+     */
+    function mergeSceneAssistIntentLabels(fullText, ocrRegionCount) {
+      const contextual = examineMvpDocumentIntentLabels(fullText, ocrRegionCount);
+      const out = [];
+      const seenAction = new Set();
+      function addFrom(label) {
+        const L = String(label || "").trim();
+        if (!L) return;
+        const action = mapLensIntentLabelToAction(L);
+        if (seenAction.has(action)) return;
+        seenAction.add(action);
+        out.push(L);
+      }
+      for (const l of contextual) {
+        addFrom(l);
+        if (out.length >= 3) return out;
+      }
+      for (const g of GENERIC_LENS_INTENTS) {
+        addFrom(g);
+        if (out.length >= 3) return out;
+      }
+      return out;
+    }
+
     /** Debounced re-OCR after user adjusts the document frame (unused in Plan A MVP — drag/resize disabled). */
     function scheduleExamineOcrRefresh() {
       if (examineOcrRefreshTimer) window.clearTimeout(examineOcrRefreshTimer);
@@ -5975,7 +6002,7 @@ Rules:
           writingStyle: "unknown",
           structured: {},
         };
-        const labels = examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length).slice(0, 3);
+        const labels = mergeSceneAssistIntentLabels(examineFullText, examineOcrElements.length);
         openSceneAssistIntentSheet(labels.length ? labels : GENERIC_LENS_INTENTS.slice(0, 3));
       } finally {
         analyzingBadge.classList.remove("show");
