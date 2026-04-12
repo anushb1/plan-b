@@ -114,50 +114,51 @@
       );
     }
 
-    /* Pixel-style “Examine text” shooting hint */
+    /* Top slot: “Examine text” — solid dark pill (same slot as toast) */
     .pixel-text-hint {
       position: absolute;
-      top: 88px;
+      top: calc(env(safe-area-inset-top, 0px) + 82px);
+      bottom: auto;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 16;
-      display: none;
+      z-index: 26;
+      display: inline-flex;
       align-items: center;
-      opacity: 0;
-      gap: 10px;
-      padding: 8px 16px 8px 12px;
+      gap: 6px;
+      padding: 5px 11px 5px 8px;
       border-radius: 999px;
       border: none;
       font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 400;
       letter-spacing: 0.01em;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(20, 20, 22, 0.72);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      color: #fff;
+      background: rgba(60, 60, 60, 0.9);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      pointer-events: auto;
-      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-      max-width: calc(100% - 32px);
+      max-width: calc(100% - 28px);
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        opacity 0.2s ease-out,
+        visibility 0.2s ease-out,
+        transform 0.2s ease-out,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .pixel-text-hint:focus,
+    .pixel-text-hint:focus-visible {
+      outline: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
     .pixel-text-hint.is-visible {
-      display: inline-flex;
+      visibility: visible;
       opacity: 1;
-      animation: hint-pop-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-
-    @keyframes hint-pop-in {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
+      pointer-events: auto;
     }
 
     .pixel-text-hint:active {
@@ -168,38 +169,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.85);
-      transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+      color: rgba(255, 255, 255, 0.92);
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .pixel-text-hint__ico svg {
-      width: 17px;
-      height: 17px;
+      width: 14px;
+      height: 14px;
     }
 
     .pixel-text-hint__ico.is-armed {
-      background: rgba(255, 235, 150, 0.28);
-      color: #fff8dc;
-      box-shadow: 0 0 0 1px rgba(255, 224, 130, 0.45);
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
     }
 
     .pixel-text-hint.is-examining {
-      background: rgba(255, 248, 210, 0.88);
-      color: rgba(28, 22, 8, 0.95);
-      box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.65),
-        0 0 0 1px rgba(255, 200, 80, 0.55);
+      background: rgba(72, 72, 72, 0.95);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32), 0 1px 2px rgba(0, 0, 0, 0.22);
     }
 
     .pixel-text-hint.is-examining .pixel-text-hint__ico {
-      background: rgba(255, 220, 120, 0.55);
-      color: rgba(40, 30, 5, 0.92);
-      box-shadow: 0 0 0 1px rgba(220, 160, 40, 0.4);
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
     }
 
     .pixel-text-hint__label {
@@ -236,7 +232,926 @@
       to { opacity: 1; }
     }
 
-    /* Tap-away scrim: leaves shutter + mode strip tappable (capture still dismisses bubbles in JS) */
+    /* Examine Text: Google Lens–style document frame (white brackets + light blue text highlights) */
+    .examine-doc-frame {
+      position: absolute;
+      z-index: 1;
+      border-radius: 14px;
+      background: rgba(210, 215, 225, 0.22);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+      animation: lens-box-fade-in 0.32s cubic-bezier(0.2, 0.85, 0.2, 1) forwards;
+      opacity: 0;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .examine-doc-pan {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: 14px;
+      cursor: move;
+      touch-action: none;
+    }
+
+    .examine-doc-frame__highlights {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .examine-doc-frame__highlights .ocr-text-highlight {
+      pointer-events: auto;
+    }
+
+    .ocr-text-highlight {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: rgba(129, 196, 255, 0.18);
+      box-shadow:
+        0 0 0 1px rgba(66, 165, 245, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font: inherit;
+      color: transparent;
+      appearance: none;
+      transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.12s ease;
+    }
+
+    .ocr-text-highlight.is-selected {
+      background: rgba(66, 165, 245, 0.35);
+      box-shadow:
+        0 0 0 2px rgba(37, 154, 255, 0.98),
+        0 0 24px rgba(66, 165, 245, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      z-index: 2;
+    }
+
+    .ocr-text-highlight:active {
+      transform: scale(0.998);
+    }
+
+    .examine-doc-bracket {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid #fff;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    }
+
+    .examine-doc-bracket--tl {
+      left: 6px;
+      top: 6px;
+      border-right: none;
+      border-bottom: none;
+      border-radius: 3px 0 0 0;
+    }
+
+    .examine-doc-bracket--tr {
+      right: 6px;
+      top: 6px;
+      border-left: none;
+      border-bottom: none;
+      border-radius: 0 3px 0 0;
+    }
+
+    .examine-doc-bracket--bl {
+      left: 6px;
+      bottom: 6px;
+      border-right: none;
+      border-top: none;
+      border-radius: 0 0 0 3px;
+    }
+
+    .examine-doc-bracket--br {
+      right: 6px;
+      bottom: 6px;
+      border-left: none;
+      border-top: none;
+      border-radius: 0 0 3px 0;
+    }
+
+    .examine-doc-handle {
+      position: absolute;
+      z-index: 4;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      touch-action: none;
+    }
+
+    .examine-doc-handle--nw {
+      left: -9px;
+      top: -9px;
+      cursor: nwse-resize;
+    }
+
+    .examine-doc-handle--ne {
+      right: -9px;
+      top: -9px;
+      cursor: nesw-resize;
+    }
+
+    .examine-doc-handle--sw {
+      left: -9px;
+      bottom: -9px;
+      cursor: nesw-resize;
+    }
+
+    .examine-doc-handle--se {
+      right: -9px;
+      bottom: -9px;
+      cursor: nwse-resize;
+    }
+
+    .text-region-layer.is-region-mode .examine-doc-frame {
+      opacity: 0.42;
+      pointer-events: none;
+    }
+
+    .text-region-layer.is-region-mode .examine-doc-frame .ocr-text-highlight {
+      pointer-events: none;
+    }
+
+    /* Examine Text: line-level regions (region mode) — each region is its own light-blue tile */
+    .text-region-box.ocr-line-box {
+      border: 1.5px solid rgba(100, 180, 255, 0.72);
+      border-radius: 8px;
+      background: rgba(129, 196, 255, 0.16);
+      animation: none;
+      opacity: 1;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font: inherit;
+      color: transparent;
+      appearance: none;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+      transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.12s ease;
+    }
+
+    .text-region-layer.is-region-mode .ocr-line-box:nth-child(4n + 1) {
+      border-color: rgba(110, 188, 255, 0.78);
+      background: rgba(135, 200, 255, 0.17);
+    }
+
+    .text-region-layer.is-region-mode .ocr-line-box:nth-child(4n + 2) {
+      border-color: rgba(95, 175, 250, 0.78);
+      background: rgba(120, 190, 255, 0.16);
+    }
+
+    .text-region-layer.is-region-mode .ocr-line-box:nth-child(4n + 3) {
+      border-color: rgba(120, 195, 255, 0.78);
+      background: rgba(128, 198, 255, 0.17);
+    }
+
+    .text-region-layer.is-region-mode .ocr-line-box:nth-child(4n + 4) {
+      border-color: rgba(88, 170, 248, 0.78);
+      background: rgba(118, 188, 255, 0.16);
+    }
+
+    .text-region-layer.is-region-mode.is-region-reveal .ocr-line-box {
+      animation: ocr-line-reveal-in 0.2s ease forwards;
+    }
+
+    @keyframes ocr-line-reveal-in {
+      from {
+        opacity: 0;
+        transform: scale(0.988);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .text-region-box.ocr-line-box.is-selected {
+      border-width: 2.5px;
+      border-color: rgba(37, 154, 255, 0.98) !important;
+      background: rgba(66, 165, 245, 0.34) !important;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.32),
+        0 0 0 2px rgba(255, 255, 255, 0.45),
+        0 0 28px rgba(66, 165, 245, 0.62);
+      transform: scale(1.008);
+      z-index: 2;
+    }
+
+    .text-region-layer.is-region-mode.is-region-reveal .ocr-line-box.is-selected {
+      animation: ocr-line-reveal-in-selected 0.2s ease forwards;
+    }
+
+    @keyframes ocr-line-reveal-in-selected {
+      from {
+        opacity: 0;
+        transform: scale(0.988);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1.008);
+      }
+    }
+
+    .app.lens-examination .text-region-layer {
+      z-index: 14;
+    }
+
+    .app.lens-examination .text-region-layer .examine-doc-frame,
+    .app.lens-examination .text-region-layer .ocr-line-box {
+      pointer-events: auto;
+    }
+
+    .app.lens-examination .text-region-layer.is-region-mode .examine-doc-frame {
+      pointer-events: none;
+    }
+
+    /* Lens-style highlights (legacy / server-normalized regions) */
+    .text-region-box.lens-box {
+      border: 1.5px solid rgba(66, 165, 245, 0.95);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28), 0 0 18px rgba(66, 165, 245, 0.32);
+      background: rgba(66, 165, 245, 0.06);
+      animation: lens-box-fade-in 0.42s cubic-bezier(0.2, 0.85, 0.2, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes lens-box-fade-in {
+      from {
+        opacity: 0;
+        transform: scale(0.992);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Lens intents: centered above shutter (~14px gap); does not overlap shutter row */
+    .lens-intent-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(max(138px, env(safe-area-inset-bottom, 0px) + 122px) + 72px + 14px);
+      z-index: 13;
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.18s ease-out, visibility 0.18s ease-out;
+    }
+
+    .lens-intent-strip.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .lens-intent-pill {
+      appearance: none;
+      cursor: pointer;
+      margin: 0;
+      padding: 5px 12px;
+      border-radius: 18px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      text-align: center;
+      color: #fff;
+      background: rgba(60, 60, 60, 0.9);
+      border: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.16);
+      transition: opacity 0.18s ease-out, transform 0.15s ease, background 0.15s ease;
+      max-width: min(44vw, 200px);
+      width: auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .lens-intent-pill:focus,
+    .lens-intent-pill:focus-visible {
+      outline: none;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill {
+      animation: lens-intent-pill-in 0.18s ease-out both;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill:nth-child(2) {
+      animation-delay: 0.05s;
+    }
+
+    .lens-intent-strip.is-visible .lens-intent-pill:nth-child(3) {
+      animation-delay: 0.09s;
+    }
+
+    @keyframes lens-intent-pill-in {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .lens-intent-pill:hover {
+      background: rgba(68, 68, 68, 0.92);
+    }
+
+    .lens-intent-pill:active {
+      transform: scale(0.98);
+      opacity: 0.92;
+    }
+
+    /* Examine Text: centered Pixel-style dialog (12px type like intent pills; clears shutter stack) */
+    .lens-examine-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: max(6px, env(safe-area-inset-top)) 12px calc(200px + env(safe-area-inset-bottom)) 12px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+      box-sizing: border-box;
+    }
+
+    .lens-examine-overlay.is-open {
+      pointer-events: auto;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .lens-examine-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .lens-examine-sheet {
+      position: relative;
+      z-index: 1;
+      width: calc(100% - 28px);
+      max-width: 300px;
+      max-height: min(48vh, 300px);
+      background: rgba(42, 42, 46, 0.94);
+      color: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.96);
+      opacity: 0;
+      transition:
+        transform 0.26s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.2s ease;
+      font-size: 12px;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+    }
+
+    .lens-examine-overlay.is-open .lens-examine-sheet {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .lens-examine-sheet--light {
+      background: rgba(250, 250, 252, 0.96);
+      color: #1c1c1e;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .lens-examine-sheet--dark {
+      background: rgba(32, 32, 36, 0.96);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .lens-examine-grab {
+      display: none;
+    }
+
+    .lens-examine-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 8px 6px 12px;
+      flex-shrink: 0;
+    }
+
+    .lens-examine-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .lens-examine-x {
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .lens-examine-x:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .lens-examine-sheet--light .lens-examine-x:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .lens-examine-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 0 12px 8px;
+      -webkit-overflow-scrolling: touch;
+      font-size: 12px;
+    }
+
+    .lens-examine-bar {
+      flex-shrink: 0;
+      padding: 8px 10px 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .lens-examine-sheet--light .lens-examine-bar {
+      border-top-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .lens-examine-bar .btn-lens-secondary {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      padding: 5px 12px;
+      border-radius: 18px;
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(60, 60, 60, 0.92);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.16);
+    }
+
+    .lens-examine-bar .btn-lens-secondary:hover {
+      background: rgba(68, 68, 68, 0.95);
+    }
+
+    .lens-examine-sheet--light .lens-examine-bar .btn-lens-secondary {
+      color: #fff;
+      background: rgba(60, 60, 60, 0.9);
+    }
+
+    .lens-examine-bar .btn-lens-primary {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      padding: 5px 14px;
+      border-radius: 18px;
+      color: #fff;
+      background: var(--modal-blue, #0b57d0);
+      box-shadow: 0 2px 6px rgba(11, 87, 208, 0.35);
+    }
+
+    .lens-examine-bar .btn-lens-primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .lens-examine-sheet--dark .btn-lens-primary {
+      background: #8ab4f8;
+      color: #202124;
+      box-shadow: none;
+    }
+
+    .lens-examine-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 0 12px 8px;
+    }
+
+    .lens-examine-tab {
+      appearance: none;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 18px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.88);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .lens-examine-tab.is-active {
+      background: #8ab4f8;
+      color: #202124;
+    }
+
+    /* Add to calendar — Google Calendar–style (segment + grouped rows) */
+    .lens-examine-sheet--calendar.lens-examine-sheet--light {
+      background: #f1f3f4;
+      border-color: rgba(60, 64, 67, 0.18);
+      max-width: 340px;
+      max-height: min(56vh, 420px);
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-toolbar {
+      background: #fff;
+      border-bottom: 1px solid #e8eaed;
+      padding: 10px 8px 10px 12px;
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #202124;
+      letter-spacing: 0;
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-scroll {
+      background: #f1f3f4;
+      padding: 10px 12px 12px;
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-bar {
+      background: #fff;
+      border-top-color: #e8eaed;
+      padding: 10px 12px 12px;
+      justify-content: space-between;
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-bar .btn-lens-primary {
+      background: #1a73e8;
+      color: #fff;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      box-shadow: none;
+    }
+
+    .lens-examine-sheet--calendar .lens-examine-bar .btn-lens-primary:hover {
+      filter: brightness(1.05);
+      background: #1765cc;
+    }
+
+    .lens-examine-sheet--calendar .btn-lens-text {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: #1a73e8;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .lens-examine-sheet--calendar .btn-lens-text:hover {
+      background: rgba(26, 115, 232, 0.08);
+    }
+
+    .lens-cal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lens-cal-segment {
+      display: flex;
+      background: #e8eaed;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lens-cal-segment__btn {
+      flex: 1;
+      appearance: none;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+      cursor: pointer;
+      color: #5f6368;
+      background: transparent;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    .lens-cal-segment__btn.is-active {
+      background: #fff;
+      color: #1a73e8;
+      box-shadow:
+        0 1px 2px rgba(60, 64, 67, 0.28),
+        0 1px 3px 1px rgba(60, 64, 67, 0.1);
+    }
+
+    .lens-cal-subtitle {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.35;
+      color: #5f6368;
+      padding: 0 2px;
+    }
+
+    .lens-cal-card {
+      background: #fff;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+    }
+
+    .lens-cal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 12px;
+      min-height: 44px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #e8eaed;
+    }
+
+    .lens-cal-row:last-child {
+      border-bottom: none;
+    }
+
+    .lens-cal-row--title {
+      padding: 12px 14px;
+      min-height: auto;
+      align-items: center;
+    }
+
+    .lens-cal-title-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: #202124;
+      padding: 0;
+      outline: none;
+    }
+
+    .lens-cal-row__ico {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 5px;
+      color: #5f6368;
+    }
+
+    .lens-cal-row input:not(.lens-cal-title-input),
+    .lens-cal-row textarea {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #3c4043;
+      padding: 4px 0 5px;
+      outline: none;
+    }
+
+    .lens-cal-row textarea {
+      min-height: 72px;
+      resize: vertical;
+      margin-top: 1px;
+    }
+
+    .lens-cal-row--multiline {
+      align-items: flex-start;
+    }
+
+    .lens-cal-card input::placeholder,
+    .lens-cal-card textarea::placeholder {
+      color: #80868b;
+      opacity: 1;
+      font-weight: 400;
+    }
+
+    .lens-examine-field {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .lens-examine-field .ico {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+
+    .lens-examine-field input,
+    .lens-examine-field textarea {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 3px 0 6px;
+      outline: none;
+    }
+
+    .lens-examine-sheet--light .lens-examine-field input,
+    .lens-examine-sheet--light .lens-examine-field textarea {
+      border-bottom-color: rgba(0, 0, 0, 0.12);
+      color: #1c1c1e;
+    }
+
+    .lens-examine-field textarea {
+      min-height: 52px;
+      resize: vertical;
+    }
+
+    .lens-doc-preview__h1 {
+      font-size: 12px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      line-height: 1.35;
+      color: inherit;
+    }
+
+    .lens-doc-preview__p {
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0 0 8px;
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .lens-examine-sheet--light .lens-doc-preview__p {
+      color: #3a3a3c;
+    }
+
+    .lens-doc-preview__ul {
+      margin: 0 0 8px;
+      padding-left: 16px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .lens-examine-list .lens-examine-list-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .lens-examine-list .lens-examine-list-row input[type="checkbox"] {
+      margin-top: 2px;
+      transform: scale(0.9);
+    }
+
+    .lens-examine-list .lens-examine-list-row input[type="text"] {
+      flex: 1;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      background: rgba(0, 0, 0, 0.2);
+      color: inherit;
+    }
+
+    .lens-examine-sheet--light .lens-examine-list .lens-examine-list-row input[type="text"] {
+      border-color: rgba(0, 0, 0, 0.12);
+      background: #fff;
+      color: #1c1c1e;
+    }
+
+    .lens-examine-share-preview {
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 8px 10px;
+      border-radius: 10px;
+      max-height: 36vh;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.22);
+      color: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .lens-examine-sheet--light .lens-examine-share-preview {
+      background: #f2f2f7;
+      color: #1c1c1e;
+      border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    .lens-examine-muted {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.55);
+      margin: 0 0 8px;
+    }
+
+    .lens-examine-sheet--light .lens-examine-muted {
+      color: #8e8e93;
+    }
+
+    textarea.lens-examine-note-body {
+      width: 100%;
+      min-height: 100px;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.35;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    /* Tap-away scrim (e.g. quick-suggest); Examine Text mode no longer enables this — outside taps do not exit examination */
     .suggest-dismiss-scrim {
       position: absolute;
       top: 0;
@@ -319,9 +1234,11 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .pixel-text-hint.is-visible,
+      .pixel-text-hint,
+      .toast,
       .quick-suggest-layer,
-      .quick-suggest-pill {
+      .quick-suggest-pill,
+      .lens-intent-strip.is-visible .lens-intent-pill {
         animation: none !important;
         transition: opacity 0.15s ease !important;
       }
@@ -1240,33 +2157,46 @@
       resize: vertical;
     }
 
-    /* Toast */
+    /*
+     * Toast — just below “Examine Text” shooting hint (hint top = safe + 82px).
+     * 40px ≈ hint row height + padding; 10px gap below hint.
+     */
     .toast {
-      position: fixed;
-      top: max(16px, env(safe-area-inset-top));
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 82px + 40px + 10px);
       left: 50%;
-      transform: translateX(-50%) translateY(-120%);
-      background: #27272a;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: min(320px, calc(100% - 28px));
+      background: rgba(60, 60, 60, 0.95);
       color: #fff;
-      padding: 12px 18px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 400;
       display: flex;
       align-items: center;
-      gap: 12px;
-      z-index: 200;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-      max-width: 92vw;
+      gap: 10px;
+      z-index: 27;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
     }
 
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     .toast a {
-      color: var(--md-primary);
-      font-weight: 600;
-      text-decoration: none;
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 400;
+      text-decoration: underline;
+      text-underline-offset: 2px;
       white-space: nowrap;
     }
 
@@ -1476,6 +2406,8 @@
       <button type="button" class="quick-suggest-pill" data-quick="reminder">Create reminder</button>
     </div>
 
+    <div class="lens-intent-strip" id="lensIntentStrip" role="group" aria-label="Suggested actions" aria-hidden="true"></div>
+
     <div class="intent-wrap" id="intentWrap">
       <div class="intent-panel">
         <p class="intent-hint hidden" id="intentHint"></p>
@@ -1581,11 +2513,29 @@
     </div>
 
     <div class="nav-gesture-bar" aria-hidden="true"></div>
-          </div>
+
+    <div class="lens-examine-overlay" id="lensExamineOverlay" aria-hidden="true">
+      <div class="lens-examine-backdrop" id="lensExamineBackdrop" tabindex="-1"></div>
+      <div class="lens-examine-sheet" id="lensExamineSheet" role="dialog" aria-modal="true" aria-labelledby="lensExamineTitle">
+        <div class="lens-examine-grab" aria-hidden="true"></div>
+        <div class="lens-examine-toolbar">
+          <h2 class="lens-examine-title" id="lensExamineTitle">Preview</h2>
+          <button type="button" class="lens-examine-x" id="btnLensExamineClose" aria-label="Close">×</button>
         </div>
+        <div class="lens-examine-scroll" id="lensExamineScroll"></div>
+        <div class="lens-examine-bar" id="lensExamineBar"></div>
       </div>
     </div>
-  </div>
+
+    <div class="toast" id="toast" aria-live="polite">
+      <span id="toastMsg">Saved</span>
+      <a href="#" id="toastView">View here</a>
+    </div>
+          </div><!-- .app -->
+        </div><!-- .device-screen -->
+      </div><!-- .device-bezel -->
+    </div><!-- .device-frame -->
+  </div><!-- .device-stage -->
 
   <div class="backdrop" id="backdrop" aria-hidden="true">
     <div class="modal" id="actionModal" role="dialog" aria-labelledby="modalTitle" data-mode="event">
@@ -1678,16 +2628,11 @@
     </div>
   </div>
 
-  <div class="toast" id="toast" aria-live="polite">
-    <span id="toastMsg">Saved</span>
-    <a href="#" id="toastView">View</a>
-  </div>
-
   <div class="settings-backdrop" id="settingsBackdrop" aria-hidden="true">
     <div class="settings-sheet" role="dialog" aria-labelledby="settingsTitle">
       <h3 id="settingsTitle">Analysis server</h3>
       <p>
-        Live preview runs <strong>Tesseract.js</strong> in your browser (no server round-trip). “Examine text” sends a full-quality frame to <code style="font-size:12px;">POST /analyze</code>; the server calls Gemini with <code style="font-size:12px;">GEMINI_API_KEY</code> — that key is not stored in the browser.
+        Live preview and <strong>Examine text</strong> use <strong>Tesseract.js</strong> on-device in your browser (offline-capable). No cloud OCR and no LLM for text examination.
       </p>
       <p style="margin-top:10px;font-size:13px;opacity:0.9;">
         Run <code style="font-size:12px;">npm install</code> and <code style="font-size:12px;">npm start</code> from the project root, with a <code style="font-size:12px;">.env</code> file (see <code style="font-size:12px;">.env.example</code>).
@@ -1744,12 +2689,23 @@
     const settingsBackdrop = document.getElementById("settingsBackdrop");
     const modalBodyScroll = document.getElementById("modalBodyScroll");
     const moreOptionsEl = document.getElementById("moreOptions");
+    const lensIntentStrip = document.getElementById("lensIntentStrip");
     const textHintBar = document.getElementById("textHintBar");
     const textHintIcon = document.getElementById("textHintIcon");
     const textRegionLayer = document.getElementById("textRegionLayer");
     const quickSuggestLayer = document.getElementById("quickSuggestLayer");
     const suggestDismissScrim = document.getElementById("suggestDismissScrim");
-    const cameraModesRoot = document.getElementById("cameraModes");
+    const lensExamineOverlay = document.getElementById("lensExamineOverlay");
+    const lensExamineBackdrop = document.getElementById("lensExamineBackdrop");
+    const lensExamineSheet = document.getElementById("lensExamineSheet");
+    const lensExamineTitle = document.getElementById("lensExamineTitle");
+    const lensExamineScroll = document.getElementById("lensExamineScroll");
+    const lensExamineBar = document.getElementById("lensExamineBar");
+    const btnLensExamineClose = document.getElementById("btnLensExamineClose");
+
+    function isLensExamineOverlayOpen() {
+      return !!(lensExamineOverlay && lensExamineOverlay.classList.contains("is-open"));
+    }
 
     let stream = null;
     let facingMode = "environment";
@@ -1761,21 +2717,54 @@
     let lastSavedPayload = null;
     let lastBlobUrl = null;
     let lastGeminiResult = null;
+    let lastAnalyzeImageResult = null;
+    const GENERIC_LENS_INTENTS = ["Copy text", "Add to calendar", "Create list"];
     let lastMapsQuery = "";
     let examinationUIActive = false;
     let previewPollBusy = false;
     let hintExamineBusy = false;
+    let examineOcrScratchCanvas = null;
+    let examineOcrElements = [];
+    let examineSelectedIndex = -1;
+    let examineOcrImageW = 0;
+    let examineOcrImageH = 0;
+    let examineMode = "document";
+    let examineFullText = "";
+    let examineDocumentBbox = null;
+    /** User-adjustable document window in full-frame image coordinates (same space as examineOcrImageW/H). */
+    let examineUserDocRect = null;
+    let examineOcrRefreshTimer = 0;
+    let examineRefreshInFlight = false;
+    let examineDocDragState = null;
+    let examineOverlayRaf = 0;
     let previewCanvas = null;
     let previewCtx = null;
     const MIN_TEXT_LEN = 8;
     const PREVIEW_POLL_MS = 400;
-    /** Tesseract preview OCR on downscaled canvas; “Examine text” still uses Gemini (POST /analyze). */
+    /** Tesseract preview OCR on downscaled canvas; “Examine text” runs full-frame on-device OCR (no server / LLM). */
     const OCR_PREVIEW_MAX_WIDTH = 960;
+    const OCR_EXAMINE_MAX_EDGE = 1280;
+    const OCR_EXAMINE_RECOGNIZE_TIMEOUT_MS = 15000;
+    const OCR_EXAMINE_MAX_REGIONS = 14;
+    const EXAMINE_OCR_REFRESH_DEBOUNCE_MS = 420;
+    const EXAMINE_DOC_MIN_SIDE = 28;
+    const OCR_EXAMINE_MIN_LINE_CONFIDENCE = 36;
+    const EXAMINE_TOAST_NO_TEXT = "Please try to focus on text";
+    const EXAMINE_TOAST_BLURRY = "Text not clear. Please try to get closer";
+    const EXAMINE_TOAST_TECHNICAL = "Unable to detect text. Please try again";
+    /** Below this (when finite), treat as low-confidence / illegible for examine fallback messaging. */
+    const OCR_EXAMINE_LOW_CONF_THRESHOLD = 0.42;
     const HINT_DEBOUNCE_SHOW_MS = 0;
-    const HINT_DEBOUNCE_HIDE_MS = 300;
-    /** After a positive text cue, keep “Examine Text” up until this long after the last positive poll (reduces flicker). */
-    const TEXT_HINT_HOLD_MS = 3000;
-    /** Heuristic cues (softTextCue / structuredDocCue) are not scored for UI gating — see pollPreviewTextDetection. */
+    const HINT_DEBOUNCE_HIDE_MS = 0;
+    /** After a positive text cue, keep “Examine Text” up until this long after the last positive poll (reduces flicker). Same window for auto-dismissing examination UI when preview OCR sees no text. */
+    const TEXT_HINT_HOLD_MS = 2000;
+    /** Require this many consecutive positive polls before showing (reduces one-frame noise). */
+    const TEXT_HINT_SHOW_MIN_STREAK = 2;
+    /** If Tesseract never settles, release the preview poll lock so the UI can recover. */
+    const OCR_PREVIEW_RECOGNIZE_TIMEOUT_MS = 12000;
+    /** getOcrWorker() can hang on WASM/network; do not hold previewPollBusy indefinitely. */
+    const OCR_WORKER_ACQUIRE_TIMEOUT_MS = 8000;
+    /** UI gating: OCR (nw≥2) || luma+edge scene cue — no grid/row heuristics — see pollPreviewTextDetection. */
     const TEXT_DETECT_DEBUG =
       typeof location !== "undefined" &&
       (new URLSearchParams(location.search).get("textDebug") === "1" ||
@@ -1817,6 +2806,9 @@
     let textHintShowPendingSince = 0;
     let textHintHidePendingSince = 0;
     let textHintHoldUntil = 0;
+    let textHintPositiveStreak = 0;
+    /** While lens examination is active: time when preview OCR last failed to see text (performance.now); 0 = not accumulating. */
+    let examinationNoTextSince = 0;
     let textDetectPreviewLogWant = null;
     let textDetectPreviewLogAt = 0;
     let ocrWorkerPromise = null;
@@ -1832,23 +2824,62 @@
       textHintShowPendingSince = 0;
       textHintHidePendingSince = 0;
       textHintHoldUntil = 0;
+      textHintPositiveStreak = 0;
+      examinationNoTextSince = 0;
     }
 
-    function tickTextHintBubble(wantShow, meta) {
+    /**
+     * While examination overlays / lens strip are showing, keep polling preview OCR. If no on-screen text
+     * is detected for TEXT_HINT_HOLD_MS, dismiss examination (same delay as hiding the “Examine Text” hint).
+     * Does not auto-dismiss while the lens examine pop-up (#lensExamineOverlay) is open — sheet content
+     * and prefilled fields stay stable regardless of preview OCR.
+     */
+    function tickExaminationNoTextPresence(ocrSignal) {
+      if (!examinationUIActive) return;
+      if (isLensExamineOverlayOpen()) {
+        examinationNoTextSince = 0;
+        return;
+      }
+      const now = performance.now();
+      if (ocrSignal) {
+        examinationNoTextSince = 0;
+        return;
+      }
+      if (!examinationNoTextSince) examinationNoTextSince = now;
+      if (now - examinationNoTextSince >= TEXT_HINT_HOLD_MS) {
+        examinationNoTextSince = 0;
+        dismissExaminationUI();
+      }
+    }
+
+    /**
+     * @param {boolean} rawPositive — this poll has a clear text signal (OCR and/or strong layout).
+     * Hold extends on every rawPositive; visibility requires TEXT_HINT_SHOW_MIN_STREAK consecutive rawPositive polls.
+     */
+    function tickTextHintBubble(rawPositive, meta) {
       const now = performance.now();
       const visible = textHintBar && textHintBar.classList.contains("is-visible");
-      if (
-        TEXT_DETECT_DEBUG &&
-        (wantShow !== textDetectPreviewLogWant || now - textDetectPreviewLogAt >= 2500)
-      ) {
-        textDetectPreviewLogWant = wantShow;
-        textDetectPreviewLogAt = now;
-        logTextDetect("preview", meta);
-      }
 
-      if (wantShow) {
+      if (rawPositive) {
+        textHintPositiveStreak = Math.min(textHintPositiveStreak + 1, 256);
         textHintHoldUntil = now + TEXT_HINT_HOLD_MS;
         textHintHidePendingSince = 0;
+      } else {
+        textHintPositiveStreak = 0;
+      }
+
+      const wantDisplay = rawPositive && textHintPositiveStreak >= TEXT_HINT_SHOW_MIN_STREAK;
+
+      if (
+        TEXT_DETECT_DEBUG &&
+        (rawPositive !== textDetectPreviewLogWant || now - textDetectPreviewLogAt >= 2500)
+      ) {
+        textDetectPreviewLogWant = rawPositive;
+        textDetectPreviewLogAt = now;
+        logTextDetect("preview", Object.assign({ rawPositive, textHintPositiveStreak, wantDisplay }, meta));
+      }
+
+      if (wantDisplay) {
         if (!visible) {
           if (HINT_DEBOUNCE_SHOW_MS <= 0) {
             setTextHintBarVisible(true);
@@ -1882,9 +2913,11 @@
       }
     }
 
+    /** Still preview: any lens is OK. Only skip when the Photo/Video toggle is on Video (lens carousel “Photo” is unrelated). */
     function isPhotoMode() {
-      const a = cameraModesRoot && cameraModesRoot.querySelector(".mode-item.active");
-      return !!(a && a.getAttribute("data-mode") === "photo");
+      const pvtVideo = document.getElementById("pvtVideo");
+      if (pvtVideo && pvtVideo.classList.contains("active")) return false;
+      return true;
     }
 
     function parseJsonFromModel(raw) {
@@ -1897,6 +2930,1045 @@
       } catch {
         return null;
       }
+    }
+
+    /** Map API labels to short on-screen copy (2–3 words). */
+    function displayLensIntentLabel(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return GENERIC_LENS_INTENTS[0];
+      const l = s.toLowerCase();
+      if (/copy\s+address/.test(l)) return "Copy address";
+      if (/convert\s+to\s+doc/.test(l)) return "Convert to doc";
+      if (/\bcopy\b/.test(l)) return "Copy text";
+      if (/calendar|schedule|event|meeting/.test(l)) return "Add to calendar";
+      if (/\blist\b|todo|checklist/.test(l)) return "Create list";
+      if (/create\s+reminder/.test(l)) return "Create reminder";
+      if (/remind/.test(l)) return "Set reminder";
+      if (/add\s+contact/.test(l)) return "Add contact";
+      if (/^call$/i.test(s.trim()) || (/\bcall\b/.test(l) && !/contact/.test(l))) return "Call";
+      if (/map|location|address|directions|navigate/.test(l)) return "Open in Maps";
+      if (/note|save note/.test(l)) return "Save note";
+      if (/\btask\b/.test(l)) return "Create task";
+      if (/share/.test(l)) return "Share text";
+      const words = s.split(/\s+/).filter(Boolean).slice(0, 3);
+      return words.length ? words.join(" ") : GENERIC_LENS_INTENTS[0];
+    }
+
+    function mapLensIntentLabelToAction(label) {
+      const L = String(label || "").toLowerCase();
+      if (/\bcall\b/.test(L) && !/contact/.test(L)) return "call";
+      if (/add\s+contact/.test(L)) return "contact";
+      if (/\bsend\s+email\b/.test(L)) return "email";
+      if (/copy\s+address/.test(L)) return "copy";
+      if (/convert\s+to\s+doc/.test(L)) return "gdoc";
+      if (/\bcopy|clipboard/.test(L)) return "copy";
+      if (/calendar|schedule|event|meeting/.test(L)) return "event";
+      if (/list|todo|checklist/.test(L)) return "todolist";
+      if (/create\s+reminder|remind/.test(L)) return "reminder";
+      if (/map|location|address|directions|navigate/.test(L)) return "maps";
+      if (/note|save note/.test(L)) return "note";
+      if (/\btask\b/.test(L)) return "task";
+      if (/share/.test(L)) return "share";
+      if (/doc/.test(L)) return "gdoc";
+      return "copy";
+    }
+
+    function clearLensIntentStrip() {
+      if (!lensIntentStrip) return;
+      lensIntentStrip.innerHTML = "";
+      lensIntentStrip.removeAttribute("data-lens-item-index");
+      lensIntentStrip.removeAttribute("data-lens-examine-mode");
+      lensIntentStrip.classList.remove("is-visible");
+      lensIntentStrip.setAttribute("aria-hidden", "true");
+    }
+
+    function showLensIntentStrip(intentLabels, maxCount, itemIndex, examineModeAttr) {
+      if (!lensIntentStrip) return;
+      const src = intentLabels && intentLabels.length ? intentLabels : GENERIC_LENS_INTENTS;
+      const cap =
+        typeof maxCount === "number" && maxCount > 0 ? maxCount : src.length > 2 ? 3 : 2;
+      const list = src.slice(0, cap);
+      lensIntentStrip.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const label of list) {
+        const display = displayLensIntentLabel(label);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lens-intent-pill";
+        btn.setAttribute("data-action", mapLensIntentLabelToAction(label));
+        btn.textContent = display;
+        frag.appendChild(btn);
+      }
+      lensIntentStrip.appendChild(frag);
+      lensIntentStrip.classList.add("is-visible");
+      lensIntentStrip.setAttribute("aria-hidden", "false");
+      if (typeof itemIndex === "number" && itemIndex >= 0) {
+        lensIntentStrip.setAttribute("data-lens-item-index", String(itemIndex));
+      } else {
+        lensIntentStrip.removeAttribute("data-lens-item-index");
+      }
+      if (examineModeAttr) {
+        lensIntentStrip.setAttribute("data-lens-examine-mode", examineModeAttr);
+      } else {
+        lensIntentStrip.removeAttribute("data-lens-examine-mode");
+      }
+    }
+
+    /** --- Examine Text: on-device OCR (Tesseract), overlay, rule classifier, intent mapping --- */
+    const EXAMINE_PHONE_RE = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/;
+    const EXAMINE_DATE_SLASH_RE = /\b\d{1,2}\/\d{1,2}\b/;
+    const EXAMINE_DATE_ISO_RE = /\b\d{4}-\d{2}-\d{2}\b/;
+    const EXAMINE_MONTH_RE =
+      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i;
+    const EXAMINE_STREET_RE = /\b(St|Ave|Rd|Blvd)\b/i;
+    const EXAMINE_LIST_GLYPH_RE =
+      /^(?:[\s\u00A0]*)(?:[\u2610\u2611\u2612\u25A1\u25FB\u25AA\u2022\u25E6○●◦▪▸]\s*|[-–—*+]\s+|\d+[.)]\s+|[(]?[a-zA-Z][)]\s+)/;
+    const EXAMINE_VERB_LEAD_RE =
+      /^(make|plan|call|buy|get|send|email|write|meet|schedule|book|do|finish|add|remind|take|pick|order|visit|review|check)\b/i;
+
+    function classifyExamineText(raw) {
+      const t = String(raw || "").trim();
+      if (!t) return "text";
+      if (/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(t)) return "email";
+      if (EXAMINE_PHONE_RE.test(t)) return "contact";
+      if (
+        EXAMINE_DATE_SLASH_RE.test(t) ||
+        EXAMINE_DATE_ISO_RE.test(t) ||
+        EXAMINE_MONTH_RE.test(t) ||
+        /\b\d{1,2}:\d{2}\b/.test(t)
+      )
+        return "date";
+      if (/\d/.test(t) && EXAMINE_STREET_RE.test(t) && t.length > 10) return "address";
+      return "text";
+    }
+
+    function examineLinesSimilarLength(lines, frac) {
+      if (!lines || lines.length < 2) return false;
+      const lens = lines.map((l) => l.length);
+      const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+      if (mean < 1) return false;
+      const ok = lens.filter((len) => Math.abs(len - mean) <= mean * frac).length;
+      return ok >= Math.ceil(lens.length * 0.5);
+    }
+
+    function examineHasListGlyphs(lines) {
+      return lines.some((l) => EXAMINE_LIST_GLYPH_RE.test(l) || /□|■|⬜|☑/.test(l));
+    }
+
+    function examineHasVerbLeadingLines(lines) {
+      return lines.filter((l) => EXAMINE_VERB_LEAD_RE.test(l.trim())).length >= 2;
+    }
+
+    function classifyExamineListContent(fullText, lineStrings) {
+      const lines = lineStrings && lineStrings.length
+        ? lineStrings.map((s) => String(s || "").trim()).filter(Boolean)
+        : String(fullText || "")
+            .split(/\n/)
+            .map((l) => l.trim())
+            .filter(Boolean);
+      if (lines.length < 2) return false;
+      let hits = 0;
+      if (lines.length >= 2) hits++;
+      if (examineLinesSimilarLength(lines, 0.3)) hits++;
+      if (examineHasListGlyphs(lines)) hits++;
+      if (examineHasVerbLeadingLines(lines)) hits++;
+      return hits >= 2;
+    }
+
+    function classifyExamineRegionIntent(raw) {
+      const t = String(raw || "").trim();
+      if (!t) return "text";
+      const structured = classifyExamineText(t);
+      if (structured !== "text") return structured;
+      const lines = t.split(/\n/).map((l) => l.trim()).filter(Boolean);
+      if (classifyExamineListContent(t, lines)) return "list";
+      return "text";
+    }
+
+    function examineActionsForType(type) {
+      switch (type) {
+        case "date":
+          return ["Add to calendar", "Create reminder"];
+        case "address":
+          return ["Open in Maps", "Copy address"];
+        case "contact":
+          return ["Call", "Add contact"];
+        case "email":
+          return ["Send email", "Copy text"];
+        case "list":
+          return ["Create list", "Copy text"];
+        default:
+          return ["Copy text", "Convert to doc"];
+      }
+    }
+
+    function examineLineConfidenceFromTesseract(lineOrWord) {
+      const c = lineOrWord && typeof lineOrWord.confidence === "number" ? lineOrWord.confidence : NaN;
+      if (Number.isFinite(c) && c >= 0 && c <= 100) return c;
+      return 65;
+    }
+
+    function mergeExamineBboxesUnion(items) {
+      if (!items || !items.length) return null;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const e of items) {
+        const b = e.bbox;
+        minX = Math.min(minX, b.x);
+        minY = Math.min(minY, b.y);
+        maxX = Math.max(maxX, b.x + b.width);
+        maxY = Math.max(maxY, b.y + b.height);
+      }
+      if (!Number.isFinite(minX)) return null;
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    }
+
+    function padExamineBbox(bbox, w, h, ratio) {
+      const px = Math.max(3, w * ratio);
+      const py = Math.max(3, h * ratio);
+      return {
+        x: Math.max(0, bbox.x - px),
+        y: Math.max(0, bbox.y - py),
+        width: Math.min(w, bbox.width + 2 * px),
+        height: Math.min(h, bbox.height + 2 * py),
+      };
+    }
+
+    function horizontalOverlapRatioExamine(a, b) {
+      const ax1 = a.x + a.width;
+      const bx1 = b.x + b.width;
+      const inter = Math.max(0, Math.min(ax1, bx1) - Math.max(a.x, b.x));
+      const minW = Math.min(a.width, b.width);
+      return minW > 0 ? inter / minW : 0;
+    }
+
+    function examineVerticalStackCanMerge(cur, next) {
+      const gap = next.bbox.y - (cur.bbox.y + cur.bbox.height);
+      const gapOk = gap <= Math.max(6, 0.55 * Math.min(cur.bbox.height, next.bbox.height));
+      const overlapOk = horizontalOverlapRatioExamine(cur.bbox, next.bbox) >= 0.18;
+      const cxCur = cur.bbox.x + cur.bbox.width / 2;
+      const cxNext = next.bbox.x + next.bbox.width / 2;
+      const avgW = (cur.bbox.width + next.bbox.width) / 2;
+      const alignOk = Math.abs(cxCur - cxNext) <= Math.max(avgW * 0.38, 10);
+      return gapOk && (overlapOk || alignOk);
+    }
+
+    function mergeNearbyExamineLines(lines) {
+      if (!lines.length) return [];
+      const sorted = lines.slice().sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
+      const out = [];
+      let cur = {
+        text: sorted[0].text,
+        bbox: Object.assign({}, sorted[0].bbox),
+        confidence: sorted[0].confidence,
+      };
+      for (let i = 1; i < sorted.length; i++) {
+        const next = sorted[i];
+        if (examineVerticalStackCanMerge(cur, next)) {
+          const nx = Math.min(cur.bbox.x, next.bbox.x);
+          const ny = Math.min(cur.bbox.y, next.bbox.y);
+          const nx2 = Math.max(cur.bbox.x + cur.bbox.width, next.bbox.x + next.bbox.width);
+          const ny2 = Math.max(cur.bbox.y + cur.bbox.height, next.bbox.y + next.bbox.height);
+          const sameLine = horizontalOverlapRatioExamine(cur.bbox, next.bbox) >= 0.3;
+          const sep = sameLine ? " " : "\n";
+          let joined = cur.text + sep + next.text;
+          joined = sameLine ? joined.replace(/\s+/g, " ").trim() : joined.replace(/\s+\n/g, "\n").replace(/\n\s+/g, "\n").trim();
+          cur = {
+            text: joined,
+            bbox: { x: nx, y: ny, width: nx2 - nx, height: ny2 - ny },
+            confidence: Math.min(cur.confidence, next.confidence),
+          };
+        } else {
+          out.push(cur);
+          cur = {
+            text: next.text,
+            bbox: Object.assign({}, next.bbox),
+            confidence: next.confidence,
+          };
+        }
+      }
+      out.push(cur);
+      return out;
+    }
+
+    function rankExamineLineRegions(lines, imageW, imageH) {
+      const minArea = imageW * imageH * 0.000012;
+      const filtered = lines.filter((ln) => {
+        if (typeof ln.confidence === "number" && ln.confidence < OCR_EXAMINE_MIN_LINE_CONFIDENCE) return false;
+        const area = ln.bbox.width * ln.bbox.height;
+        if (area < minArea) return false;
+        const pctW = (ln.bbox.width / imageW) * 100;
+        const pctH = (ln.bbox.height / imageH) * 100;
+        if (pctW < 0.035 && pctH < 0.035) return false;
+        return String(ln.text || "").trim().length >= 1;
+      });
+      filtered.sort((a, b) => {
+        const sa = a.text.length * (a.confidence / 100);
+        const sb = b.text.length * (b.confidence / 100);
+        return sb - sa;
+      });
+      const picked = [];
+      const iou2d = (a, b) => {
+        const ax2 = a.x + a.width;
+        const ay2 = a.y + a.height;
+        const bx2 = b.x + b.width;
+        const by2 = b.y + b.height;
+        const ix = Math.max(0, Math.min(ax2, bx2) - Math.max(a.x, b.x));
+        const iy = Math.max(0, Math.min(ay2, by2) - Math.max(a.y, b.y));
+        const inter = ix * iy;
+        const ua = a.width * a.height + b.width * b.height - inter;
+        return ua > 0 ? inter / ua : 0;
+      };
+      for (const cand of filtered) {
+        if (picked.length >= OCR_EXAMINE_MAX_REGIONS) break;
+        if (picked.some((p) => iou2d(p.bbox, cand.bbox) > 0.42)) continue;
+        picked.push(cand);
+      }
+      return picked.length ? picked : filtered.slice(0, OCR_EXAMINE_MAX_REGIONS);
+    }
+
+    function mergeExamineLineItemsToOne(items) {
+      if (!items.length) return null;
+      const sorted = items.slice().sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      let minConf = 100;
+      const texts = [];
+      for (const it of sorted) {
+        const b = it.bbox;
+        minX = Math.min(minX, b.x);
+        minY = Math.min(minY, b.y);
+        maxX = Math.max(maxX, b.x + b.width);
+        maxY = Math.max(maxY, b.y + b.height);
+        minConf = Math.min(minConf, it.confidence);
+        texts.push(it.text);
+      }
+      return {
+        text: texts.join("\n"),
+        bbox: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+        confidence: minConf,
+      };
+    }
+
+    function collectExamineOcrLines(data) {
+      const out = [];
+      for (const b of data.blocks || []) {
+        for (const p of b.paragraphs || []) {
+          const lineItems = [];
+          for (const line of p.lines || []) {
+            const t = String(line.text || "")
+              .replace(/\s+/g, " ")
+              .trim();
+            const bb = line.bbox;
+            if (!t || !bb || !Number.isFinite(bb.x0)) continue;
+            const w = bb.x1 - bb.x0;
+            const h = bb.y1 - bb.y0;
+            if (w < 2 || h < 2) continue;
+            lineItems.push({
+              text: t,
+              bbox: { x: bb.x0, y: bb.y0, width: w, height: h },
+              confidence: examineLineConfidenceFromTesseract(line),
+            });
+          }
+          if (!lineItems.length) continue;
+          const mergedPara = mergeExamineLineItemsToOne(lineItems);
+          if (mergedPara) out.push(mergedPara);
+        }
+      }
+      return out;
+    }
+
+    function collectExamineOcrWords(data) {
+      const out = [];
+      for (const b of data.blocks || []) {
+        for (const p of b.paragraphs || []) {
+          for (const line of p.lines || []) {
+            for (const word of line.words || []) {
+              const t = String(word.text || "")
+                .replace(/\s+/g, " ")
+                .trim();
+              const bb = word.bbox;
+              if (!t || !bb || !Number.isFinite(bb.x0)) continue;
+              const w = bb.x1 - bb.x0;
+              const h = bb.y1 - bb.y0;
+              if (w < 1 || h < 1) continue;
+              out.push({
+                text: t,
+                bbox: { x: bb.x0, y: bb.y0, width: w, height: h },
+                confidence: examineLineConfidenceFromTesseract(word),
+              });
+            }
+          }
+        }
+      }
+      return out;
+    }
+
+    function buildExamineRegionsFromOcrData(data, imageW, imageH) {
+      if (!data) return { ranked: [], documentBbox: null };
+      let rawLines = collectExamineOcrLines(data);
+      if (!rawLines.length) rawLines = collectExamineOcrWords(data);
+      let docUnion = mergeExamineBboxesUnion(rawLines);
+      if (docUnion) docUnion = padExamineBbox(docUnion, imageW, imageH, 0.015);
+      const merged = mergeNearbyExamineLines(rawLines);
+      const ranked = rankExamineLineRegions(merged, imageW, imageH);
+      return { ranked, documentBbox: docUnion };
+    }
+
+    function videoImageBboxToOverlayPercent(bbox, videoEl, imgW, imgH) {
+      const vw = videoEl.videoWidth;
+      const vh = videoEl.videoHeight;
+      if (!vw || !vh || !imgW || !imgH) return null;
+      const rect = videoEl.getBoundingClientRect();
+      const cw = rect.width;
+      const ch = rect.height;
+      if (!cw || !ch) return null;
+      const scale = Math.max(cw / vw, ch / vh);
+      const dispW = vw * scale;
+      const dispH = vh * scale;
+      const ox = (cw - dispW) / 2;
+      const oy = (ch - dispH) / 2;
+      const sx = imgW / vw;
+      const sy = imgH / vh;
+      const vx = bbox.x / sx;
+      const vy = bbox.y / sy;
+      const vwidth = bbox.width / sx;
+      const vheight = bbox.height / sy;
+      const left = ((ox + vx * scale) / cw) * 100;
+      const top = ((oy + vy * scale) / ch) * 100;
+      const wPct = ((vwidth * scale) / cw) * 100;
+      const hPct = ((vheight * scale) / ch) * 100;
+      return {
+        left: Math.max(0, Math.min(100, left)),
+        top: Math.max(0, Math.min(100, top)),
+        w: Math.max(0, Math.min(100, wPct)),
+        h: Math.max(0, Math.min(100, hPct)),
+      };
+    }
+
+    function applyExamineSelectionToAppState(sel) {
+      lastText = String(sel || "").trim();
+      const ent = parseEntities(lastText);
+      extracted = { title: ent.title, when: ent.when, location: ent.location };
+      lastClassification = classifyScan(lastText);
+      parsedTodoLines = parseTodoItems(lastText);
+      if (parsedTodoLines.length === 0 && lastText) {
+        parsedTodoLines = lastText
+          .split(/\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0)
+          .slice(0, 20);
+      }
+    }
+
+    function intersectExamineBboxes(a, b) {
+      const x0 = Math.max(a.x, b.x);
+      const y0 = Math.max(a.y, b.y);
+      const x1 = Math.min(a.x + a.width, b.x + b.width);
+      const y1 = Math.min(a.y + a.height, b.y + b.height);
+      if (x1 <= x0 + 0.5 || y1 <= y0 + 0.5) return null;
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    }
+
+    /** Keep document selection above the shutter row so highlights stay in the camera area. */
+    function clampExamineRectAboveShutter(rect, iw, ih) {
+      const row = document.querySelector(".shutter-row");
+      if (!row || !video || !rect) return clampExamineRect(rect, iw, ih);
+      const sr = row.getBoundingClientRect();
+      const pt = videoClientToImagePoint(sr.left + sr.width * 0.5, sr.top - 2);
+      if (!pt || !Number.isFinite(pt.y)) return clampExamineRect(rect, iw, ih);
+      const maxBottom = Math.max(EXAMINE_DOC_MIN_SIDE * 2, Math.min(pt.y, ih));
+      let r = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      if (r.y >= maxBottom) {
+        r.y = Math.max(0, maxBottom - EXAMINE_DOC_MIN_SIDE);
+        r.height = EXAMINE_DOC_MIN_SIDE;
+      }
+      if (r.y + r.height > maxBottom) {
+        r.height = Math.max(EXAMINE_DOC_MIN_SIDE, maxBottom - r.y);
+      }
+      return clampExamineRect(r, iw, ih);
+    }
+
+    function clampExamineRect(rect, iw, ih) {
+      const MIN = EXAMINE_DOC_MIN_SIDE;
+      let x = rect.x;
+      let y = rect.y;
+      let w = Math.max(MIN, rect.width);
+      let h = Math.max(MIN, rect.height);
+      if (x < 0) {
+        w += x;
+        x = 0;
+      }
+      if (y < 0) {
+        h += y;
+        y = 0;
+      }
+      if (x + w > iw) w = Math.max(MIN, iw - x);
+      if (y + h > ih) h = Math.max(MIN, ih - y);
+      if (w < MIN) w = MIN;
+      if (h < MIN) h = MIN;
+      if (x + w > iw) x = Math.max(0, iw - w);
+      if (y + h > ih) y = Math.max(0, ih - h);
+      return { x, y, width: w, height: h };
+    }
+
+    function videoClientToImagePoint(clientX, clientY) {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const iw = examineOcrImageW;
+      const ih = examineOcrImageH;
+      const rect = video.getBoundingClientRect();
+      if (!vw || !vh || !iw || !ih) return null;
+      const scale = Math.max(rect.width / vw, rect.height / vh);
+      const dispW = vw * scale;
+      const dispH = vh * scale;
+      const ox = rect.left + (rect.width - dispW) / 2;
+      const oy = rect.top + (rect.height - dispH) / 2;
+      const vx = (clientX - ox) / scale;
+      const vy = (clientY - oy) / scale;
+      const ix = (vx / vw) * iw;
+      const iy = (vy / vh) * ih;
+      return { x: ix, y: iy };
+    }
+
+    function examineResizeRectFromHandle(handle, startRect, ix, iy) {
+      const MIN = EXAMINE_DOC_MIN_SIDE;
+      let r = null;
+      if (handle === "se") {
+        const fx = startRect.x;
+        const fy = startRect.y;
+        r = {
+          x: fx,
+          y: fy,
+          width: Math.max(MIN, ix - fx),
+          height: Math.max(MIN, iy - fy),
+        };
+      } else if (handle === "nw") {
+        const fx = startRect.x + startRect.width;
+        const fy = startRect.y + startRect.height;
+        const nx = Math.min(ix, fx - MIN);
+        const ny = Math.min(iy, fy - MIN);
+        r = { x: nx, y: ny, width: fx - nx, height: fy - ny };
+      } else if (handle === "ne") {
+        const sx = startRect.x;
+        const sy = startRect.y + startRect.height;
+        const ny = Math.min(iy, sy - MIN);
+        r = {
+          x: sx,
+          y: ny,
+          width: Math.max(MIN, ix - sx),
+          height: sy - ny,
+        };
+      } else if (handle === "sw") {
+        const fx = startRect.x + startRect.width;
+        const fy = startRect.y;
+        const nx = Math.min(ix, fx - MIN);
+        r = {
+          x: nx,
+          y: fy,
+          width: fx - nx,
+          height: Math.max(MIN, iy - fy),
+        };
+      }
+      return r
+        ? clampExamineRectAboveShutter(clampExamineRect(r, examineOcrImageW, examineOcrImageH), examineOcrImageW, examineOcrImageH)
+        : null;
+    }
+
+    /** Fallback when OCR returns no string yet; default pair is Copy + Convert to doc. */
+    const EXAMINE_DOCUMENT_DEFAULT_INTENTS = ["Copy text", "Convert to doc"];
+
+    function examineDocumentActionsFromText(fullText) {
+      const t = String(fullText || "").trim();
+      if (!t) return EXAMINE_DOCUMENT_DEFAULT_INTENTS.slice();
+      const intentType = classifyExamineRegionIntent(t);
+      return examineActionsForType(intentType).slice(0, 2);
+    }
+
+    function scheduleExamineOcrRefresh() {
+      if (examineOcrRefreshTimer) window.clearTimeout(examineOcrRefreshTimer);
+      examineOcrRefreshTimer = window.setTimeout(() => {
+        examineOcrRefreshTimer = 0;
+        refreshExamineOcrForUserRect().catch((e) => console.warn("[Examine] refresh OCR:", e));
+      }, EXAMINE_OCR_REFRESH_DEBOUNCE_MS);
+    }
+
+    function examineCropCanvasToRect(sourceCanvas, rect) {
+      const rw = Math.max(1, Math.round(rect.width));
+      const rh = Math.max(1, Math.round(rect.height));
+      const c = document.createElement("canvas");
+      c.width = rw;
+      c.height = rh;
+      const cctx = c.getContext("2d");
+      cctx.drawImage(
+        sourceCanvas,
+        Math.round(rect.x),
+        Math.round(rect.y),
+        rw,
+        rh,
+        0,
+        0,
+        rw,
+        rh
+      );
+      return c;
+    }
+
+    async function refreshExamineOcrForUserRect() {
+      if (!examinationUIActive || examineMode !== "document" || !examineUserDocRect) return;
+      if (examineRefreshInFlight) return;
+      if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2) return;
+      examineRefreshInFlight = true;
+      try {
+        if (isLensExamineOverlayOpen()) return;
+        const r = clampExamineRectAboveShutter(
+          clampExamineRect(examineUserDocRect, examineOcrImageW, examineOcrImageH),
+          examineOcrImageW,
+          examineOcrImageH
+        );
+        examineUserDocRect = r;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const crop = examineCropCanvasToRect(canvas, r);
+        const pack = await runTesseractExamineOnCanvas(crop);
+        if (isLensExamineOverlayOpen()) return;
+        const ox = r.x;
+        const oy = r.y;
+        examineOcrElements = (pack.elements || []).map((e) => ({
+          text: e.text,
+          confidence: e.confidence,
+          bbox: {
+            x: e.bbox.x + ox,
+            y: e.bbox.y + oy,
+            width: e.bbox.width,
+            height: e.bbox.height,
+          },
+        }));
+        let packText = (pack.data && pack.data.text ? String(pack.data.text) : "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!packText && examineOcrElements.length) {
+          packText = examineOcrElements.map((e) => e.text).join("\n");
+        }
+        examineFullText = packText;
+        if (examineSelectedIndex >= 0 && examineOcrElements[examineSelectedIndex]) {
+          applyExamineSelectionToAppState(examineOcrElements[examineSelectedIndex].text);
+        } else {
+          applyExamineSelectionToAppState(examineFullText);
+        }
+        lastAnalyzeImageResult = {
+          texts: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: [
+              e.bbox.x / examineOcrImageW,
+              e.bbox.y / examineOcrImageH,
+              e.bbox.width / examineOcrImageW,
+              e.bbox.height / examineOcrImageH,
+            ],
+          })),
+          intents: [],
+        };
+        lastGeminiResult = {
+          extractedText: lastText,
+          textRegions: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: { x0: e.bbox.x, y0: e.bbox.y, x1: e.bbox.x + e.bbox.width, y1: e.bbox.y + e.bbox.height },
+          })),
+          hasMeaningfulText: lastText.length >= 2,
+          textDetectionConfidence: 0.75,
+          writingStyle: "unknown",
+          structured: {},
+        };
+        renderExamineOverlays();
+        if (examineSelectedIndex >= 0 && examineSelectedIndex < examineOcrElements.length) {
+          const el = examineOcrElements[examineSelectedIndex];
+          const actions = examineActionsForType(classifyExamineRegionIntent(el.text)).slice(0, 2);
+          showLensIntentStrip(actions, 2, examineSelectedIndex, "document");
+        } else {
+          showLensIntentStrip(examineDocumentActionsFromText(examineFullText), 2, null, "document");
+        }
+      } finally {
+        examineRefreshInFlight = false;
+      }
+    }
+
+    function requestExamineOverlayUpdate() {
+      if (examineOverlayRaf) return;
+      examineOverlayRaf = window.requestAnimationFrame(() => {
+        examineOverlayRaf = 0;
+        if (examineDocDragState && textRegionLayer && examineUserDocRect && examineMode === "document") {
+          const frame = textRegionLayer.querySelector(".examine-doc-frame");
+          if (frame) {
+            const pct = videoImageBboxToOverlayPercent(
+              examineUserDocRect,
+              video,
+              examineOcrImageW,
+              examineOcrImageH
+            );
+            if (pct) {
+              frame.style.left = pct.left + "%";
+              frame.style.top = pct.top + "%";
+              frame.style.width = pct.w + "%";
+              frame.style.height = pct.h + "%";
+            }
+          }
+          return;
+        }
+        renderExamineOverlays();
+      });
+    }
+
+    function detachExamineDocDragListeners() {
+      if (!examineDocDragState) return;
+      window.removeEventListener("pointermove", examineDocDragState.onMove);
+      window.removeEventListener("pointerup", examineDocDragState.onUp);
+      window.removeEventListener("pointercancel", examineDocDragState.onUp);
+      examineDocDragState = null;
+    }
+
+    function onExamineDocPointerMove(ev) {
+      if (!examineDocDragState || ev.pointerId !== examineDocDragState.pointerId) return;
+      const pt = videoClientToImagePoint(ev.clientX, ev.clientY);
+      if (!pt) return;
+      const { type, handle, startRect, startPtr } = examineDocDragState;
+      const iw = examineOcrImageW;
+      const ih = examineOcrImageH;
+      if (type === "move") {
+        const dx = pt.x - startPtr.x;
+        const dy = pt.y - startPtr.y;
+        examineUserDocRect = clampExamineRectAboveShutter(
+          clampExamineRect(
+            {
+              x: startRect.x + dx,
+              y: startRect.y + dy,
+              width: startRect.width,
+              height: startRect.height,
+            },
+            iw,
+            ih
+          ),
+          iw,
+          ih
+        );
+      } else if (type === "resize" && handle) {
+        const r = examineResizeRectFromHandle(handle, startRect, pt.x, pt.y);
+        if (r) examineUserDocRect = r;
+      }
+      requestExamineOverlayUpdate();
+    }
+
+    function onExamineDocPointerUp(ev) {
+      if (!examineDocDragState || ev.pointerId !== examineDocDragState.pointerId) return;
+      const cap = examineDocDragState.captureEl;
+      try {
+        if (cap && typeof cap.releasePointerCapture === "function") cap.releasePointerCapture(ev.pointerId);
+      } catch (_) {}
+      detachExamineDocDragListeners();
+      scheduleExamineOcrRefresh();
+    }
+
+    function onExamineDocPanPointerDown(ev) {
+      if (!examinationUIActive || examineMode !== "document" || !examineUserDocRect) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const pt = videoClientToImagePoint(ev.clientX, ev.clientY);
+      if (!pt) return;
+      examineDocDragState = {
+        type: "move",
+        pointerId: ev.pointerId,
+        startRect: Object.assign({}, examineUserDocRect),
+        startPtr: pt,
+        captureEl: ev.currentTarget,
+        onMove: onExamineDocPointerMove,
+        onUp: onExamineDocPointerUp,
+      };
+      try {
+        ev.currentTarget.setPointerCapture(ev.pointerId);
+      } catch (_) {}
+      window.addEventListener("pointermove", onExamineDocPointerMove);
+      window.addEventListener("pointerup", onExamineDocPointerUp);
+      window.addEventListener("pointercancel", onExamineDocPointerUp);
+    }
+
+    function onExamineDocHandlePointerDown(ev) {
+      if (!examinationUIActive || examineMode !== "document" || !examineUserDocRect) return;
+      const handle = ev.currentTarget && ev.currentTarget.dataset ? ev.currentTarget.dataset.handle : null;
+      if (!handle) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const pt = videoClientToImagePoint(ev.clientX, ev.clientY);
+      if (!pt) return;
+      examineDocDragState = {
+        type: "resize",
+        handle,
+        pointerId: ev.pointerId,
+        startRect: Object.assign({}, examineUserDocRect),
+        startPtr: pt,
+        captureEl: ev.currentTarget,
+        onMove: onExamineDocPointerMove,
+        onUp: onExamineDocPointerUp,
+      };
+      try {
+        ev.currentTarget.setPointerCapture(ev.pointerId);
+      } catch (_) {}
+      window.addEventListener("pointermove", onExamineDocPointerMove);
+      window.addEventListener("pointerup", onExamineDocPointerUp);
+      window.addEventListener("pointercancel", onExamineDocPointerUp);
+    }
+
+    function onExamineDocHighlightClick(ev) {
+      if (!examinationUIActive || examineMode !== "document") return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const idx = parseInt(ev.currentTarget.getAttribute("data-examine-index") || "-1", 10);
+      if (idx < 0) return;
+      if (examineSelectedIndex === idx) {
+        selectExamineDocument();
+      } else {
+        selectExamineElement(idx);
+      }
+    }
+
+    function renderExamineOverlays() {
+      clearTextRegions();
+      if (!textRegionLayer || !video) {
+        if (textRegionLayer) textRegionLayer.setAttribute("aria-hidden", "true");
+        return;
+      }
+      const docRect = examineUserDocRect || examineDocumentBbox;
+      if (!docRect && !examineOcrElements.length) {
+        textRegionLayer.setAttribute("aria-hidden", "true");
+        return;
+      }
+      textRegionLayer.setAttribute("aria-hidden", "false");
+      textRegionLayer.classList.toggle("is-region-mode", examineMode === "region");
+      textRegionLayer.classList.remove("is-region-reveal");
+
+      const iw = examineOcrImageW;
+      const ih = examineOcrImageH;
+
+      if (examineMode === "document" && docRect) {
+        const pct = videoImageBboxToOverlayPercent(docRect, video, iw, ih);
+        if (pct && pct.w > 0.02 && pct.h > 0.02) {
+          const frame = document.createElement("div");
+          frame.className = "examine-doc-frame";
+          frame.style.left = pct.left + "%";
+          frame.style.top = pct.top + "%";
+          frame.style.width = pct.w + "%";
+          frame.style.height = pct.h + "%";
+          frame.setAttribute("role", "presentation");
+          frame.setAttribute("aria-label", "Text selection");
+
+          const pan = document.createElement("div");
+          pan.className = "examine-doc-pan";
+          pan.addEventListener("pointerdown", onExamineDocPanPointerDown);
+          frame.appendChild(pan);
+
+          ["tl", "tr", "bl", "br"].forEach((corner) => {
+            const b = document.createElement("div");
+            b.className = "examine-doc-bracket examine-doc-bracket--" + corner;
+            frame.appendChild(b);
+          });
+
+          const hlLayer = document.createElement("div");
+          hlLayer.className = "examine-doc-frame__highlights";
+          examineOcrElements.forEach((item, i) => {
+            const inter = intersectExamineBboxes(item.bbox, docRect);
+            if (!inter) return;
+            const rel = {
+              x: inter.x - docRect.x,
+              y: inter.y - docRect.y,
+              width: inter.width,
+              height: inter.height,
+            };
+            const leftPct = (rel.x / docRect.width) * 100;
+            const topPct = (rel.y / docRect.height) * 100;
+            const wPct = (rel.width / docRect.width) * 100;
+            const hPct = (rel.height / docRect.height) * 100;
+            if (wPct < 0.22 || hPct < 0.22) return;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "ocr-text-highlight";
+            btn.classList.toggle("is-selected", examineMode === "document" && examineSelectedIndex === i);
+            btn.setAttribute("data-examine-index", String(i));
+            btn.setAttribute("aria-label", "Text: " + (item.text || "").slice(0, 80));
+            btn.style.left = leftPct + "%";
+            btn.style.top = topPct + "%";
+            btn.style.width = wPct + "%";
+            btn.style.height = hPct + "%";
+            btn.addEventListener("click", onExamineDocHighlightClick);
+            hlLayer.appendChild(btn);
+          });
+          frame.appendChild(hlLayer);
+
+          ["nw", "ne", "sw", "se"].forEach((h) => {
+            const hd = document.createElement("div");
+            hd.className = "examine-doc-handle examine-doc-handle--" + h;
+            hd.dataset.handle = h;
+            hd.setAttribute("role", "presentation");
+            hd.addEventListener("pointerdown", onExamineDocHandlePointerDown);
+            frame.appendChild(hd);
+          });
+
+          textRegionLayer.appendChild(frame);
+        }
+      }
+
+      if (examineMode === "region") {
+        examineOcrElements.forEach((item, i) => {
+          const pcto = videoImageBboxToOverlayPercent(item.bbox, video, iw, ih);
+          if (!pcto || pcto.w < 0.03 || pcto.h < 0.03) return;
+          const lineBtn = document.createElement("button");
+          lineBtn.type = "button";
+          lineBtn.className = "text-region-box ocr-line-box";
+          lineBtn.setAttribute("data-examine-index", String(i));
+          lineBtn.setAttribute("aria-pressed", String(i === examineSelectedIndex));
+          lineBtn.setAttribute("aria-label", "Text: " + (item.text || "").slice(0, 80));
+          lineBtn.style.left = pcto.left + "%";
+          lineBtn.style.top = pcto.top + "%";
+          lineBtn.style.width = pcto.w + "%";
+          lineBtn.style.height = pcto.h + "%";
+          lineBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            selectExamineElement(i);
+          });
+          textRegionLayer.appendChild(lineBtn);
+        });
+      }
+
+      if (examineMode === "region" && examineSelectedIndex >= 0 && examineSelectedIndex < examineOcrElements.length) {
+        textRegionLayer.querySelectorAll(".ocr-line-box").forEach((node) => {
+          const idx = parseInt(node.getAttribute("data-examine-index") || "-1", 10);
+          node.classList.toggle("is-selected", idx === examineSelectedIndex);
+        });
+      }
+    }
+
+    function selectExamineDocument() {
+      examineMode = "document";
+      examineSelectedIndex = -1;
+      applyExamineSelectionToAppState(examineFullText);
+      showLensIntentStrip(examineDocumentActionsFromText(examineFullText), 2, null, "document");
+      if (intentHint) {
+        intentHint.textContent = "Drag the frame to resize • Tap a line to select only that text";
+        intentHint.classList.remove("hidden");
+      }
+      lastGeminiResult = {
+        extractedText: lastText,
+        textRegions: examineOcrElements.map((e) => ({
+          text: e.text,
+          box: { x0: e.bbox.x, y0: e.bbox.y, x1: e.bbox.x + e.bbox.width, y1: e.bbox.y + e.bbox.height },
+        })),
+        hasMeaningfulText: lastText.length >= 2,
+        textDetectionConfidence: 0.75,
+        writingStyle: "unknown",
+        structured: {},
+      };
+    }
+
+    function selectExamineElement(index) {
+      if (!examineOcrElements.length || index < 0 || index >= examineOcrElements.length) return;
+      examineMode = "document";
+      examineSelectedIndex = index;
+      const el = examineOcrElements[index];
+      applyExamineSelectionToAppState(el.text);
+      const intentType = classifyExamineRegionIntent(el.text);
+      const actions = examineActionsForType(intentType).slice(0, 2);
+      showLensIntentStrip(actions, 2, index, "document");
+      renderExamineOverlays();
+      const preview = (el.text || "").replace(/\s+/g, " ").trim().slice(0, 220);
+      if (intentHint) {
+        intentHint.textContent = preview
+          ? preview + ((el.text || "").length > 220 ? "…" : "")
+          : "Tap a highlight or adjust the frame";
+        intentHint.classList.remove("hidden");
+      }
+      lastGeminiResult = {
+        extractedText: lastText,
+        textRegions: examineOcrElements.map((e) => ({
+          text: e.text,
+          box: { x0: e.bbox.x, y0: e.bbox.y, x1: e.bbox.x + e.bbox.width, y1: e.bbox.y + e.bbox.height },
+        })),
+        hasMeaningfulText: lastText.length >= 2,
+        textDetectionConfidence: 0.75,
+        writingStyle: "unknown",
+        structured: {},
+      };
+    }
+
+    async function runTesseractExamineOnCanvas(sourceCanvas) {
+      const worker = await Promise.race([
+        getOcrWorker(),
+        new Promise((_, rej) =>
+          window.setTimeout(() => rej(new Error("examine_get_worker_timeout")), OCR_WORKER_ACQUIRE_TIMEOUT_MS)
+        ),
+      ]);
+      if (!worker) throw new Error("OCR unavailable");
+
+      const fullW = sourceCanvas.width;
+      const fullH = sourceCanvas.height;
+      let src = sourceCanvas;
+      let scaleBack = 1;
+      const maxEdge = OCR_EXAMINE_MAX_EDGE;
+      if (Math.max(fullW, fullH) > maxEdge) {
+        scaleBack = Math.max(fullW, fullH) / maxEdge;
+        if (!examineOcrScratchCanvas) {
+          examineOcrScratchCanvas = document.createElement("canvas");
+        }
+        const tw = Math.max(2, Math.round(fullW / scaleBack));
+        const th = Math.max(2, Math.round(fullH / scaleBack));
+        examineOcrScratchCanvas.width = tw;
+        examineOcrScratchCanvas.height = th;
+        const sctx = examineOcrScratchCanvas.getContext("2d");
+        sctx.drawImage(sourceCanvas, 0, 0, fullW, fullH, 0, 0, tw, th);
+        src = examineOcrScratchCanvas;
+      }
+
+      const recognizeOpts = {
+        text: true,
+        blocks: true,
+        hocr: false,
+        tsv: false,
+        box: false,
+        unlv: false,
+        osd: false,
+      };
+      const out = await Promise.race([
+        worker.recognize(src, {}, recognizeOpts),
+        new Promise((_, rej) =>
+          window.setTimeout(() => rej(new Error("examine_ocr_timeout")), OCR_EXAMINE_RECOGNIZE_TIMEOUT_MS)
+        ),
+      ]);
+      const data = out && out.data ? out.data : null;
+      const srcW = src.width;
+      const srcH = src.height;
+      let { ranked, documentBbox } = buildExamineRegionsFromOcrData(data, srcW, srcH);
+      if (scaleBack !== 1) {
+        ranked = ranked.map((e) => ({
+          text: e.text,
+          confidence: e.confidence,
+          bbox: {
+            x: e.bbox.x * scaleBack,
+            y: e.bbox.y * scaleBack,
+            width: e.bbox.width * scaleBack,
+            height: e.bbox.height * scaleBack,
+          },
+        }));
+        if (documentBbox) {
+          documentBbox = {
+            x: documentBbox.x * scaleBack,
+            y: documentBbox.y * scaleBack,
+            width: documentBbox.width * scaleBack,
+            height: documentBbox.height * scaleBack,
+          };
+        }
+      }
+      return { data, elements: ranked, imageW: fullW, imageH: fullH, documentBbox };
     }
 
     async function analyzeFrameViaServer(imageBase64) {
@@ -2342,15 +4414,32 @@ Rules:
 
     function showExaminationResultShell() {
       examinationUIActive = true;
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.add("lens-examination");
       if (textHintBar) {
         textHintBar.classList.remove("is-examining");
       }
       if (textHintIcon) textHintIcon.classList.remove("is-armed");
       if (quickSuggestLayer) quickSuggestLayer.classList.remove("is-visible");
-      if (suggestDismissScrim) suggestDismissScrim.classList.add("is-on");
     }
 
     function dismissExaminationUI() {
+      closeLensExamineOverlay();
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.remove("lens-examination");
+      detachExamineDocDragListeners();
+      if (examineOcrRefreshTimer) {
+        window.clearTimeout(examineOcrRefreshTimer);
+        examineOcrRefreshTimer = 0;
+      }
+      examineOcrElements = [];
+      examineSelectedIndex = -1;
+      examineMode = "document";
+      examineFullText = "";
+      examineDocumentBbox = null;
+      examineUserDocRect = null;
+      if (textRegionLayer) textRegionLayer.classList.remove("is-region-mode", "is-region-reveal");
+      clearLensIntentStrip();
       clearTextRegions();
       hideQuickSuggestions();
       if (textHintBar) textHintBar.classList.remove("is-examining");
@@ -2364,13 +4453,14 @@ Rules:
 
     function setTextHintBarVisible(show) {
       if (!textHintBar) return;
-      if (
+      const photo = isPhotoMode();
+      const gatesOk =
         show &&
-        isPhotoMode() &&
+        photo &&
         !hintExamineBusy &&
         !backdrop.classList.contains("open") &&
-        !settingsBackdrop.classList.contains("open")
-      ) {
+        !settingsBackdrop.classList.contains("open");
+      if (gatesOk) {
         textHintBar.classList.add("is-visible");
         textHintBar.setAttribute("aria-hidden", "false");
       } else {
@@ -2389,26 +4479,23 @@ Rules:
       return { pc: previewCanvas, pctx: previewCtx };
     }
 
-    function previewFrameTextSignals(w, h, data) {
+    /**
+     * ROI luma variance + mean edge magnitude only (no row/grid/cell heuristics — avoids fighting the on-screen grid).
+     */
+    function previewFrameContrastEdgeOnly(w, h, data) {
       function lum(ii) {
         return 0.299 * data[ii] + 0.587 * data[ii + 1] + 0.114 * data[ii + 2];
       }
       const idx = (x, y) => (y * w + x) * 4;
-
       const roiX0 = Math.floor(w * 0.08);
       const roiX1 = Math.ceil(w * 0.92);
       const roiY0 = Math.floor(h * 0.1);
       const roiY1 = Math.ceil(h * 0.9);
-
       let edge = 0;
       let nEdge = 0;
       let sum = 0;
       let sumSq = 0;
       let nPix = 0;
-      let hGrad = 0;
-      let vGrad = 0;
-      let nGrad = 0;
-
       for (let y = roiY0; y < roiY1; y++) {
         for (let x = roiX0; x < roiX1; x++) {
           const i = idx(x, y);
@@ -2417,178 +4504,35 @@ Rules:
           sumSq += L * L;
           nPix++;
           if (x < roiX1 - 1) {
-            const dh = Math.abs(L - lum(idx(x + 1, y)));
-            edge += dh;
+            edge += Math.abs(L - lum(idx(x + 1, y)));
             nEdge++;
-            hGrad += dh;
-            nGrad++;
           }
           if (y < roiY1 - 1) {
-            const dv = Math.abs(L - lum(idx(x, y + 1)));
-            edge += dv;
+            edge += Math.abs(L - lum(idx(x, y + 1)));
             nEdge++;
-            vGrad += dv;
-            nGrad++;
           }
         }
       }
-
       if (nPix < 32 || nEdge < 4) {
-        return {
-          avgEdge: 0,
-          contrast: 0,
-          textyFraction: 0,
-          rowSpikeRatio: 0,
-          horizBias: 1,
-          notBlank: false,
-          edgePlausible: false,
-          softTextCue: false,
-          structuredDocCue: false,
-          weakSceneCue: false,
-          confidence: 0,
-          textAreaCoverage: 0,
-          wantShow: false,
-        };
+        return { avgEdge: 0, contrast: 0, notBlank: false, edgePlausible: false };
       }
-
       const mean = sum / nPix;
       const variance = Math.max(0, sumSq / nPix - mean * mean);
       const contrast = Math.sqrt(variance);
       const avgEdge = edge / nEdge;
-      const horizBias = nGrad ? hGrad / (vGrad + 1e-6) : 1;
-
-      const rowVars = [];
-      for (let y = roiY0; y < roiY1; y++) {
-        let rs = 0;
-        let rs2 = 0;
-        const rn = roiX1 - roiX0;
-        for (let x = roiX0; x < roiX1; x++) {
-          const L = lum(idx(x, y));
-          rs += L;
-          rs2 += L * L;
-        }
-        const m = rs / rn;
-        rowVars.push(Math.max(0, rs2 / rn - m * m));
-      }
-      rowVars.sort((a, b) => a - b);
-      const medVar = rowVars[Math.floor(rowVars.length * 0.5)] || 0;
-      const spikeRows = rowVars.filter((v) => v > Math.max(85, medVar * 1.82)).length;
-      const rowSpikeRatio = rowVars.length ? spikeRows / rowVars.length : 0;
-
-      const cols = 10;
-      const rows = 8;
-      const cellW = (roiX1 - roiX0) / cols;
-      const cellH = (roiY1 - roiY0) / rows;
-      let textyBlocks = 0;
-      let totalBlocks = 0;
-      const step = 2;
-
-      for (let br = 0; br < rows; br++) {
-        for (let bc = 0; bc < cols; bc++) {
-          const cx0 = Math.floor(roiX0 + bc * cellW);
-          const cx1 = Math.floor(roiX0 + (bc + 1) * cellW);
-          const cy0 = Math.floor(roiY0 + br * cellH);
-          const cy1 = Math.floor(roiY0 + (br + 1) * cellH);
-          if (cx1 <= cx0 + 4 || cy1 <= cy0 + 4) continue;
-          totalBlocks++;
-
-          let s = 0;
-          let s2 = 0;
-          let n = 0;
-          let bH = 0;
-          let bV = 0;
-          let nB = 0;
-          for (let y = cy0; y < cy1 - step; y += step) {
-            for (let x = cx0; x < cx1 - step; x += step) {
-              const L0 = lum(idx(x, y));
-              s += L0;
-              s2 += L0 * L0;
-              n++;
-              bH += Math.abs(L0 - lum(idx(x + step, y)));
-              bV += Math.abs(L0 - lum(idx(x, y + step)));
-              nB++;
-            }
-          }
-          if (n < 8 || nB < 6) continue;
-          const m = s / n;
-          const v = Math.max(0, s2 / n - m * m);
-          const ah = bH / nB;
-          const av = bV / nB;
-          const ratio = ah / (av + 1e-3);
-          const printedTexty =
-            v > 12 &&
-            v < 2800 &&
-            ah > 1.75 &&
-            ratio > 0.95 &&
-            m > 8 &&
-            m < 254;
-          const handwrittenTexty =
-            v > 16 &&
-            v < 3800 &&
-            ah > 1.35 &&
-            av > 1.2 &&
-            m > 6 &&
-            m < 254 &&
-            ah + av > 2.9 &&
-            ratio > 0.72 &&
-            ratio < 2.75;
-          if (printedTexty || handwrittenTexty) textyBlocks++;
-        }
-      }
-
-      const textyFraction = totalBlocks ? textyBlocks / totalBlocks : 0;
-      const textAreaCoverage = textyFraction;
       const notBlank = contrast > 5.5 && contrast < 142;
-      const edgePlausible = avgEdge > 4.3 && avgEdge < 90;
+      const edgePlausible = avgEdge > 4.8 && avgEdge < 86;
+      return { avgEdge, contrast, notBlank, edgePlausible };
+    }
 
-      function clamp01(x) {
-        return Math.max(0, Math.min(1, x));
-      }
-      const cTf = clamp01((textyFraction - 0.020) / 0.40);
-      const cRow = clamp01((rowSpikeRatio - 0.010) / 0.105);
-      const cHoriz = clamp01((horizBias - 0.96) / 0.17);
-      const cEdge =
-        avgEdge > 5.5 && avgEdge < 76
-          ? Math.min(clamp01((avgEdge - 4.8) / 29), clamp01((78 - avgEdge) / 28))
-          : 0;
-      const cCon =
-        contrast > 6.5 && contrast < 125
-          ? Math.min(clamp01((contrast - 5) / 44), clamp01((128 - contrast) / 34))
-          : 0;
-      let confidence = 0.25 * cTf + 0.22 * cRow + 0.09 * cHoriz + 0.21 * cEdge + 0.23 * cCon;
-      if (notBlank && edgePlausible) confidence = Math.min(1, confidence + 0.06);
-      const softTextCue =
-        notBlank && edgePlausible && (rowSpikeRatio >= 0.017 || textyFraction >= 0.014);
-      const structuredDocCue =
-        rowSpikeRatio >= 0.024 &&
-        textyFraction >= 0.01 &&
-        contrast > 5.5 &&
-        contrast < 142 &&
-        avgEdge > 4 &&
-        avgEdge < 92;
-      const weakSceneCue =
-        (rowSpikeRatio >= 0.011 || textyFraction >= 0.009) &&
-        contrast > 4.5 &&
-        contrast < 155 &&
-        avgEdge > 3.2 &&
-        avgEdge < 98;
-      const wantShow = softTextCue || structuredDocCue || weakSceneCue;
-
-      return {
-        avgEdge,
-        contrast,
-        textyFraction,
-        rowSpikeRatio,
-        horizBias,
-        notBlank,
-        edgePlausible,
-        softTextCue,
-        structuredDocCue,
-        weakSceneCue,
-        confidence,
-        textAreaCoverage,
-        wantShow,
-      };
+    /**
+     * Non-OCR path: global luma range + moderate local variance and edge density (flat walls skew low edge/contrast).
+     */
+    function previewContrastSceneSignal(luma, w, h, imageData) {
+      if (!previewLumaContrastTextCue(luma)) return false;
+      const st = previewFrameContrastEdgeOnly(w, h, imageData);
+      if (!st.notBlank || !st.edgePlausible) return false;
+      return st.contrast > 8.5 && st.contrast < 132 && st.avgEdge > 5.2 && st.avgEdge < 76;
     }
 
     function resolvePublicUrl(relPath) {
@@ -2716,6 +4660,17 @@ Rules:
       };
     }
 
+    /** Global luma range (sampled) — part of contrastSceneSignal with edge/variance (no grid). */
+    function previewLumaContrastTextCue(luma) {
+      if (!luma || typeof luma.lumaRange !== "number" || typeof luma.lumaMean !== "number") return false;
+      const r = luma.lumaRange;
+      const m = luma.lumaMean;
+      if (m < 14 || m > 247) return false;
+      if (r < 30) return false;
+      if (r >= 50) return true;
+      return r >= 34 && m > 20 && m < 244;
+    }
+
     function analyzePreviewCanvasLuma(pc, pctx) {
       const W = pc.width;
       const H = pc.height;
@@ -2736,6 +4691,7 @@ Rules:
       }
     }
 
+    /** Otsu threshold on 8-bit gray histogram (0–255). */
     function otsuThresholdFromGray(gray, len) {
       const hist = new Uint32Array(256);
       for (let i = 0; i < len; i++) hist[gray[i]]++;
@@ -2763,6 +4719,7 @@ Rules:
       return threshold;
     }
 
+    /** Grayscale + Otsu binarization: ink → black, background → white (mutates ImageData). Improves small/dense text for Tesseract. */
     function binarizeImageDataForOcr(imgData) {
       const d = imgData.data;
       const w = imgData.width;
@@ -2917,17 +4874,18 @@ Rules:
       return (s || "").replace(/\s/g, "").length;
     }
 
-    function previewOcrGlyphSignal(rawText, data) {
-      if (ocrNonWhitespaceLen(rawText) >= 1) return true;
+    /** OCR path: require ≥2 non-whitespace chars (merged text or any nested fragment). */
+    function previewOcrTextSignal(rawText, data) {
+      if (ocrNonWhitespaceLen(rawText) >= 2) return true;
       if (!data || !Array.isArray(data.blocks)) return false;
       for (const b of data.blocks) {
-        if (ocrNonWhitespaceLen(b && b.text) >= 1) return true;
+        if (ocrNonWhitespaceLen(b && b.text) >= 2) return true;
         for (const p of b.paragraphs || []) {
-          if (ocrNonWhitespaceLen(p.text) >= 1) return true;
+          if (ocrNonWhitespaceLen(p.text) >= 2) return true;
           for (const line of p.lines || []) {
-            if (ocrNonWhitespaceLen(line.text) >= 1) return true;
+            if (ocrNonWhitespaceLen(line.text) >= 2) return true;
             for (const w of line.words || []) {
-              if (ocrNonWhitespaceLen(w.text) >= 1) return true;
+              if (ocrNonWhitespaceLen(w.text) >= 2) return true;
             }
           }
         }
@@ -2935,18 +4893,15 @@ Rules:
       return false;
     }
 
+    /** Debug: edge + variance stats only (no grid heuristics). */
     function previewHeuristicTextCues(w, h, imageData) {
-      const sig = previewFrameTextSignals(w, h, imageData);
-      return {
-        softTextCue: !!sig.softTextCue,
-        structuredDocCue: !!sig.structuredDocCue,
-        weakSceneCue: !!sig.weakSceneCue,
-      };
+      return previewFrameContrastEdgeOnly(w, h, imageData);
     }
 
     function previewHeuristicLooksLikeText(w, h, imageData) {
-      const sig = previewFrameTextSignals(w, h, imageData);
-      return !!(sig.softTextCue || sig.structuredDocCue || sig.weakSceneCue);
+      const fake = { width: w, height: h, data: imageData };
+      const luma = analyzeImageDataLuma(fake);
+      return previewContrastSceneSignal(luma, w, h, imageData);
     }
 
     function previewAlnumCount(str) {
@@ -2959,9 +4914,15 @@ Rules:
         resetTextHintBubbleDebounce();
         return;
       }
-      if (examinationUIActive || hintExamineBusy) return;
-      if (backdrop.classList.contains("open") || settingsBackdrop.classList.contains("open")) return;
-      if (previewPollBusy) return;
+      if (hintExamineBusy) {
+        return;
+      }
+      if (backdrop.classList.contains("open") || settingsBackdrop.classList.contains("open")) {
+        return;
+      }
+      if (previewPollBusy) {
+        return;
+      }
 
       const vrs = video.readyState;
       const vw0 = video.videoWidth;
@@ -3012,8 +4973,29 @@ Rules:
       }
 
       previewPollBusy = true;
+      const pollWatchdogMs = OCR_WORKER_ACQUIRE_TIMEOUT_MS + OCR_PREVIEW_RECOGNIZE_TIMEOUT_MS + 4000;
+      const pollWatchdogId = window.setTimeout(() => {
+        if (previewPollBusy) {
+          previewPollBusy = false;
+          console.warn("[CameraIntent/OCR] previewPollBusy cleared by watchdog");
+        }
+      }, pollWatchdogMs);
       try {
-        const worker = await getOcrWorker();
+        let worker = null;
+        try {
+          worker = await Promise.race([
+            getOcrWorker(),
+            new Promise((_, rej) =>
+              window.setTimeout(
+                () => rej(new Error("getOcrWorker_timeout")),
+                OCR_WORKER_ACQUIRE_TIMEOUT_MS
+              )
+            ),
+          ]);
+        } catch (wErr) {
+          console.warn("[CameraIntent/OCR] getOcrWorker:", wErr);
+          worker = null;
+        }
         const { pc, pctx } = getPreviewDrawContext();
         const vw = video.videoWidth;
         const vh = video.videoHeight;
@@ -3030,37 +5012,35 @@ Rules:
           return;
         }
         const luma = analyzeImageDataLuma(rawImg);
-        let softTextCue = false;
-        let structuredDocCue = false;
-        let weakSceneCue = false;
+        let edgeStats = { avgEdge: 0, contrast: 0, notBlank: false, edgePlausible: false };
         try {
-          const cues = previewHeuristicTextCues(w, h, rawImg.data);
-          softTextCue = cues.softTextCue;
-          structuredDocCue = cues.structuredDocCue;
-          weakSceneCue = cues.weakSceneCue;
+          edgeStats = previewHeuristicTextCues(w, h, rawImg.data);
         } catch (cueErr) {
-          console.warn("[CameraIntent/OCR] previewHeuristicTextCues:", cueErr);
+          console.warn("[CameraIntent/OCR] previewFrameContrastEdgeOnly:", cueErr);
         }
+        const contrastSignal = previewContrastSceneSignal(luma, w, h, rawImg.data);
 
         console.info("[CameraIntent/Frame] camera→canvas", {
           drawImage: { sx: 0, sy: 0, sw: vw, sh: vh, dx: 0, dy: 0, dw: w, dh: h },
           video: { readyState: video.readyState, paused: video.paused },
           luma,
+          contrastSignal,
+          edgeStats,
           heuristicsFrom: "raw_frame_before_binarize",
         });
 
         if (!worker) {
-          const wantShow = softTextCue || structuredDocCue || weakSceneCue;
-          tickTextHintBubble(wantShow, {
+          const ocrSignal = false;
+          const rawPositive = ocrSignal || contrastSignal;
+          tickTextHintBubble(rawPositive, {
             pipeline: "preview_heuristic_fallback",
-            note: "OCR unavailable — heuristic only (recall mode).",
+            note: "OCR unavailable — luma + edge/variance only (no grid).",
             frameW: w,
             frameH: h,
             luma,
-            hasTextSignal: false,
-            softTextCue,
-            structuredDocCue,
-            weakSceneCue,
+            ocrSignal,
+            contrastSignal,
+            edgeStats,
           });
           return;
         }
@@ -3094,11 +5074,24 @@ Rules:
         const t0 = performance.now();
         let data = null;
         try {
-          const out = await worker.recognize(
-            pc,
-            {},
-            { text: true, blocks: true, hocr: false, tsv: false, box: false, unlv: false, osd: false }
-          );
+          const recognizeOpts = {
+            text: true,
+            blocks: true,
+            hocr: false,
+            tsv: false,
+            box: false,
+            unlv: false,
+            osd: false,
+          };
+          const out = await Promise.race([
+            worker.recognize(pc, {}, recognizeOpts),
+            new Promise((_, rej) =>
+              window.setTimeout(
+                () => rej(new Error("preview_ocr_timeout")),
+                OCR_PREVIEW_RECOGNIZE_TIMEOUT_MS
+              )
+            ),
+          ]);
           data = out && out.data ? out.data : null;
         } catch (recErr) {
           console.error("[CameraIntent/OCR] recognize:error", recErr);
@@ -3108,26 +5101,32 @@ Rules:
 
         const rawText = (data && data.text ? data.text : "").replace(/\s+/g, " ").trim();
         const chars = previewAlnumCount(rawText);
-        const hasTextSignal = previewOcrGlyphSignal(rawText, data);
-        const wantShow = hasTextSignal || softTextCue || structuredDocCue || weakSceneCue;
-        const conf01 = ocrConfidence01(data);
+        const ocrSignal = previewOcrTextSignal(rawText, data);
+        const rawPositive = ocrSignal;
 
         console.info("[CameraIntent/OCR] recognize:end", {
           ms: ocrMs,
           dataText: rawText,
           dataConfidenceRaw: data ? data.confidence : null,
-          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
+          conf01InfoOnly: (() => {
+            const c = ocrConfidence01(data);
+            return Number.isFinite(c) ? Math.round(c * 1000) / 1000 : null;
+          })(),
           alnumChars: chars,
           blockCount: data && data.blocks ? data.blocks.length : 0,
-          hasTextSignal,
-          softTextCue,
-          structuredDocCue,
-          weakSceneCue,
-          wantShow,
-          gating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms",
+          ocrSignal,
+          contrastSignal,
+          edgeStats,
+          rawPositive,
+          gating:
+            "hint uses preview OCR only (not scene contrast); streak≥" +
+            TEXT_HINT_SHOW_MIN_STREAK +
+            "; hold " +
+            TEXT_HINT_HOLD_MS +
+            "ms; examination dismiss when OCR false for same hold",
         });
 
-        tickTextHintBubble(wantShow, {
+        tickTextHintBubble(rawPositive, {
           pipeline: "tesseract_preview_ocr",
           engine: "Tesseract.js eng (LSTM), on-device",
           frameW: w,
@@ -3135,16 +5134,18 @@ Rules:
           luma,
           ocrMs,
           textPreview: rawText.slice(0, 100),
-          conf01InfoOnly: Number.isFinite(conf01) ? Math.round(conf01 * 1000) / 1000 : null,
-          hasTextSignal,
-          softTextCue,
-          structuredDocCue,
-          weakSceneCue,
+          ocrSignal,
+          contrastSignal,
+          edgeStats,
           alnumChars: chars,
         });
+        tickExaminationNoTextPresence(ocrSignal);
       } catch (e) {
         console.warn("[CameraIntent/OCR] Preview OCR:", e);
+        tickTextHintBubble(false, { pipeline: "preview_catch", err: e && e.message ? e.message : String(e) });
+        tickExaminationNoTextPresence(false);
       } finally {
+        window.clearTimeout(pollWatchdogId);
         previewPollBusy = false;
       }
     }
@@ -3162,16 +5163,29 @@ Rules:
         return;
       }
       hintExamineBusy = true;
+      examineOcrElements = [];
+      examineSelectedIndex = -1;
+      examineMode = "document";
+      examineFullText = "";
+      examineDocumentBbox = null;
+      examineUserDocRect = null;
+      if (examineOcrRefreshTimer) {
+        window.clearTimeout(examineOcrRefreshTimer);
+        examineOcrRefreshTimer = 0;
+      }
+      detachExamineDocDragListeners();
+      if (textRegionLayer) textRegionLayer.classList.remove("is-region-mode", "is-region-reveal");
       resetTextHintBubbleDebounce();
-      logTextDetect("gemini_request", { pipeline: "gemini_multimodal", path: "POST /analyze", phase: "start" });
+      logTextDetect("examine_ocr", { pipeline: "tesseract_examine", phase: "start" });
       if (textHintBar) textHintBar.classList.add("is-examining");
       if (textHintIcon) textHintIcon.classList.add("is-armed");
       analyzingBadge.classList.add("show");
-      analyzingText.textContent = "Reading with Gemini…";
+      analyzingText.textContent = "Reading…";
+      clearLensIntentStrip();
       showIntents(false);
 
       try {
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 280));
         if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2 || video.videoHeight < 2) {
           console.warn("[CameraIntent/Frame] examine skip after delay — video still not ready");
           showToast("Camera frame not available", null);
@@ -3186,63 +5200,112 @@ Rules:
           videoReadyState: video.readyState,
           luma: exLuma,
         });
-        const b64 = jpegBase64FromCanvas(0.88);
-        let parsed = null;
+        const minSpinnerMs = 200;
+        const t0 = performance.now();
+        let ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
+        let examineOcrTechnicalFailure = false;
         try {
-          parsed = await analyzeFrameViaServer(b64);
+          const [pack] = await Promise.all([
+            runTesseractExamineOnCanvas(canvas),
+            new Promise((r) => setTimeout(r, minSpinnerMs)),
+          ]);
+          ocrPack = pack;
         } catch (err) {
-          console.warn("Gemini examine failed:", err);
-          logTextDetect("gemini_error", { message: err && err.message ? err.message : String(err) });
-          resetTextHintBubbleDebounce();
-          setTextHintBarVisible(false);
-          showToast(err && err.message ? err.message : "Could not reach Gemini", null);
-          return;
+          console.warn("[CameraIntent/Examine] OCR failed:", err);
+          logTextDetect("examine_ocr_error", { message: err && err.message ? err.message : String(err) });
+          examineOcrTechnicalFailure = true;
+          showToast(EXAMINE_TOAST_TECHNICAL, null);
+          ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
+        }
+        const elapsed = performance.now() - t0;
+        if (elapsed < minSpinnerMs) {
+          await new Promise((r) => setTimeout(r, minSpinnerMs - elapsed));
         }
 
-        const clean = (parsed.extractedText || "").replace(/\|/g, "I").trim();
-        const tdc = Number(parsed.textDetectionConfidence);
-        const tdcOk = Number.isFinite(tdc) ? tdc : 0;
-        const acceptExtract =
-          clean.length >= MIN_TEXT_LEN ||
-          (parsed.hasMeaningfulText === true && clean.length >= 5) ||
-          (clean.length >= 5 && tdcOk >= 0.52);
-        if (clean.length < 5 || !acceptExtract) {
-          logTextDetect("gemini_reject", summarizeGeminiTextDetect(parsed));
-          resetTextHintBubbleDebounce();
-          setTextHintBarVisible(false);
-          showToast("No clear text in frame", null);
-          return;
+        examineOcrImageW = ocrPack.imageW;
+        examineOcrImageH = ocrPack.imageH;
+        examineOcrElements = ocrPack.elements || [];
+        examineFullText = (ocrPack.data && ocrPack.data.text ? String(ocrPack.data.text) : "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!examineFullText && examineOcrElements.length) {
+          examineFullText = examineOcrElements.map((e) => e.text).join("\n");
+        }
+        const rawFull = examineFullText;
+        examineDocumentBbox = ocrPack.documentBbox || null;
+        if (!examineDocumentBbox && examineOcrElements.length) {
+          const u = mergeExamineBboxesUnion(examineOcrElements);
+          if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
+        }
+        examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
+        if (!examineUserDocRect && examineOcrElements.length) {
+          examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
+        }
+        if (examineUserDocRect) {
+          examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
         }
 
-        logTextDetect("gemini_ok", summarizeGeminiTextDetect(parsed));
-
-        lastText = clean || lastText;
-        const ent = parseEntities(lastText);
-        const merged = mergeGeminiIntoExtracted(parsed);
-        extracted = {
-          title: merged.title || ent.title,
-          when: merged.when || ent.when,
-          location: merged.location || ent.location,
+        lastAnalyzeImageResult = {
+          texts: examineOcrElements.map((e) => ({
+            text: e.text,
+            box: [
+              e.bbox.x / examineOcrImageW,
+              e.bbox.y / examineOcrImageH,
+              e.bbox.width / examineOcrImageW,
+              e.bbox.height / examineOcrImageH,
+            ],
+          })),
+          intents: [],
         };
-        lastClassification = classifyScan(lastText);
-        parsedTodoLines = parseTodoItems(lastText);
-        if (parsedTodoLines.length === 0) {
-          parsedTodoLines = lastText
-            .split(/\n/)
-            .map((l) => l.trim())
-            .filter((l) => l.length > 0)
-            .slice(0, 20);
+
+        examineMode = "document";
+        examineSelectedIndex = -1;
+        renderExamineOverlays();
+
+        if (examineUserDocRect && examineOcrElements.length) {
+          selectExamineDocument();
+        } else if (examineUserDocRect && rawFull.length) {
+          renderExamineOverlays();
+          selectExamineDocument();
+        } else {
+          if (!examineOcrTechnicalFailure) {
+            const alnum = previewAlnumCount(rawFull);
+            const conf01 = ocrConfidence01(ocrPack.data);
+            const blockCount =
+              ocrPack.data && Array.isArray(ocrPack.data.blocks) ? ocrPack.data.blocks.length : 0;
+            const lowConf = Number.isFinite(conf01) && conf01 < OCR_EXAMINE_LOW_CONF_THRESHOLD;
+            const looksBlurredOrSmall =
+              lowConf || alnum >= 2 || blockCount > 0;
+            showToast(looksBlurredOrSmall ? EXAMINE_TOAST_BLURRY : EXAMINE_TOAST_NO_TEXT, null);
+          }
+          lastText = rawFull;
+          applyExamineSelectionToAppState(lastText);
+          lastGeminiResult = {
+            extractedText: lastText,
+            textRegions: [],
+            hasMeaningfulText: lastText.length >= 5,
+            textDetectionConfidence: lastText ? 0.55 : 0.2,
+            writingStyle: "unknown",
+            structured: {},
+          };
+          const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
+          if (intentHint) {
+            intentHint.textContent = preview
+              ? preview + (lastText.length > 220 ? "…" : "")
+              : "Pick an action below or try again";
+            intentHint.classList.remove("hidden");
+          }
+          showLensIntentStrip([...GENERIC_LENS_INTENTS], 3);
         }
-        lastGeminiResult = parsed;
 
-        renderTextRegions(regionsForHighlight(parsed, lastText));
+        logTextDetect("examine_ocr_ok", {
+          pipeline: "tesseract_examine",
+          textLen: rawFull.length,
+          regionCount: examineOcrElements.length,
+          engine: "Tesseract.js on-device",
+        });
 
-        const preview = lastText.replace(/\s+/g, " ").trim().slice(0, 220);
-        intentHint.textContent = preview + (lastText.length > 220 ? "…" : "");
-        intentHint.classList.remove("hidden");
-
-        applyRuleBasedIntents(parsed, lastText);
-        showIntents(true);
+        showIntents(false);
         showExaminationResultShell();
       } finally {
         analyzingBadge.classList.remove("show");
@@ -3256,6 +5319,7 @@ Rules:
     function capturePhoto() {
       if (!video.videoWidth) return;
       dismissExaminationUI();
+      clearLensIntentStrip();
       setTextHintBarVisible(false);
       resetTextHintBubbleDebounce();
       showIntents(false);
@@ -3386,6 +5450,501 @@ Rules:
       actionModal.dataset.mode = "event";
       btnSave.textContent = "Save";
       todoItems.innerHTML = "";
+    }
+
+    function escapeHtmlLens(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function buildStructuredDocHtml(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return '<p class="lens-doc-preview__p">No text.</p>';
+      const lines = raw.split(/\n/).map((l) => l.trim()).filter(Boolean);
+      if (!lines.length) return '<p class="lens-doc-preview__p">No text.</p>';
+      let html = "";
+      const titleLine = lines.length > 1 && lines[0].length <= 120 ? lines[0] : null;
+      const rest = titleLine ? lines.slice(1) : lines;
+      if (titleLine) html += '<h1 class="lens-doc-preview__h1">' + escapeHtmlLens(titleLine) + "</h1>";
+      let inList = false;
+      for (const line of rest) {
+        const m = line.match(/^([•\-*]|\d+[.)])\s+(.+)$/);
+        if (m) {
+          if (!inList) {
+            html += '<ul class="lens-doc-preview__ul">';
+            inList = true;
+          }
+          html += "<li>" + escapeHtmlLens(m[2]) + "</li>";
+        } else {
+          if (inList) {
+            html += "</ul>";
+            inList = false;
+          }
+          html += '<p class="lens-doc-preview__p">' + escapeHtmlLens(line) + "</p>";
+        }
+      }
+      if (inList) html += "</ul>";
+      if (!html) html = '<p class="lens-doc-preview__p">' + escapeHtmlLens(raw) + "</p>";
+      return html;
+    }
+
+    function extractFirstEmailLens(text) {
+      const m = String(text || "").match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i);
+      return m ? m[0] : "";
+    }
+
+    function extractPhoneDigitsLens(text) {
+      const d = String(text || "").replace(/\D/g, "");
+      return d.length >= 10 ? d : "";
+    }
+
+    function closeLensExamineOverlay() {
+      if (!lensExamineOverlay) return;
+      lensExamineOverlay.classList.remove("is-open");
+      if (lensExamineSheet)
+        lensExamineSheet.classList.remove(
+          "lens-examine-sheet--dark",
+          "lens-examine-sheet--light",
+          "lens-examine-sheet--calendar"
+        );
+      lensExamineOverlay.setAttribute("aria-hidden", "true");
+      if (lensExamineScroll) lensExamineScroll.innerHTML = "";
+      if (lensExamineBar) lensExamineBar.innerHTML = "";
+    }
+
+    function openLensExamineDocPreview(text, heading) {
+      const body = String(text || "").trim();
+      closeLensExamineOverlay();
+      if (lensExamineSheet) lensExamineSheet.classList.add("lens-examine-sheet--light");
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      lensExamineTitle.textContent = heading || "Document preview";
+      lensExamineScroll.innerHTML = buildStructuredDocHtml(body);
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-secondary" id="exDocBtnCopy">Copy</button>' +
+        '<button type="button" class="btn-lens-secondary" id="exDocBtnShare">Share</button>' +
+        '<button type="button" class="btn-lens-primary" id="exDocBtnSave">Save</button>';
+      const copyBtn = document.getElementById("exDocBtnCopy");
+      const shareBtn = document.getElementById("exDocBtnShare");
+      const saveBtn = document.getElementById("exDocBtnSave");
+      if (copyBtn)
+        copyBtn.addEventListener("click", () => {
+          navigator.clipboard.writeText(body).then(
+            () => showToast("Text copied", null),
+            () => showToast("Copy blocked", null)
+          );
+        });
+      if (shareBtn)
+        shareBtn.addEventListener("click", async () => {
+          try {
+            await navigator.share({ title: heading || "Document", text: body });
+            closeLensExamineOverlay();
+            showToast("Shared", null);
+          } catch (e) {
+            if (e && e.name !== "AbortError") console.warn(e);
+          }
+        });
+      if (saveBtn)
+        saveBtn.addEventListener("click", () => {
+          try {
+            const payload = { intent: "doc", body, extractedAt: new Date().toISOString() };
+            const arr = JSON.parse(localStorage.getItem("cameraDocDrafts") || "[]");
+            arr.push(payload);
+            localStorage.setItem("cameraDocDrafts", JSON.stringify(arr.slice(-30)));
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            closeLensExamineOverlay();
+            showToast("Saved on this device", url);
+          } catch (e) {
+            console.warn(e);
+          }
+        });
+    }
+
+    function openLensExamineCalendar(defaultTab, text) {
+      const body = String(text || "").trim();
+      closeLensExamineOverlay();
+      applyExamineSelectionToAppState(body);
+      const ent = parseEntities(body);
+      if (lensExamineSheet) {
+        lensExamineSheet.classList.add("lens-examine-sheet--light", "lens-examine-sheet--calendar");
+      }
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      const tabInit = defaultTab === "task" ? "task" : "event";
+      const icoClock =
+        '<svg class="lens-cal-row__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+      const icoPin =
+        '<svg class="lens-cal-row__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+      const icoNotes =
+        '<svg class="lens-cal-row__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
+      lensExamineScroll.innerHTML =
+        '<div class="lens-cal-form">' +
+        '<div class="lens-cal-segment" role="tablist" aria-label="Event or task">' +
+        '<button type="button" class="lens-cal-segment__btn' +
+        (tabInit === "event" ? " is-active" : "") +
+        '" data-cal-tab="event" role="tab" id="exCalTabEvent" aria-selected="' +
+        (tabInit === "event" ? "true" : "false") +
+        '">Event</button>' +
+        '<button type="button" class="lens-cal-segment__btn' +
+        (tabInit === "task" ? " is-active" : "") +
+        '" data-cal-tab="task" role="tab" id="exCalTabTask" aria-selected="' +
+        (tabInit === "task" ? "true" : "false") +
+        '">Task</button>' +
+        "</div>" +
+        '<p class="lens-cal-subtitle">Opens in Google Calendar</p>' +
+        '<div class="lens-cal-card">' +
+        '<div class="lens-cal-row lens-cal-row--title">' +
+        '<input type="text" class="lens-cal-title-input" id="exCalTitle" autocomplete="off" placeholder="Add title" />' +
+        "</div>" +
+        '<div class="lens-cal-row lens-cal-row--with-ico">' +
+        icoClock +
+        '<input type="text" id="exCalWhen" autocomplete="off" placeholder="Date and time" />' +
+        "</div>" +
+        '<div class="lens-cal-row lens-cal-row--with-ico" id="exCalLocRow" ' +
+        (tabInit === "task" ? 'hidden' : "") +
+        ">" +
+        icoPin +
+        '<input type="text" id="exCalLoc" autocomplete="off" placeholder="Add location" />' +
+        "</div>" +
+        '<div class="lens-cal-row lens-cal-row--with-ico lens-cal-row--multiline">' +
+        icoNotes +
+        '<textarea id="exCalNotes" placeholder="Add description"></textarea>' +
+        "</div>" +
+        "</div>" +
+        "</div>";
+      const titleEl = document.getElementById("exCalTitle");
+      const whenEl = document.getElementById("exCalWhen");
+      const locEl = document.getElementById("exCalLoc");
+      const notesEl = document.getElementById("exCalNotes");
+      const locRow = document.getElementById("exCalLocRow");
+      if (titleEl) titleEl.value = ent.title || guessTitle(body);
+      if (whenEl) whenEl.value = ent.when || "";
+      if (locEl) locEl.value = ent.location || "";
+      if (notesEl) notesEl.value = body;
+      let calTab = tabInit;
+      function syncCalendarTabUi() {
+        if (lensExamineTitle)
+          lensExamineTitle.textContent = calTab === "task" ? "Create task" : "Create event";
+        if (locRow) locRow.hidden = calTab === "task";
+        if (whenEl)
+          whenEl.placeholder = calTab === "task" ? "Due date" : "Date and time";
+        if (notesEl)
+          notesEl.placeholder = calTab === "task" ? "Add details" : "Add description";
+        const tabs = lensExamineScroll.querySelectorAll("[data-cal-tab]");
+        tabs.forEach((b) => {
+          const t = b.getAttribute("data-cal-tab");
+          const on = t === calTab;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+      syncCalendarTabUi();
+      const tabs = lensExamineScroll.querySelectorAll("[data-cal-tab]");
+      tabs.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          calTab = btn.getAttribute("data-cal-tab") || "event";
+          syncCalendarTabUi();
+        });
+      });
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-text" id="exCalMore">More options</button>' +
+        '<button type="button" class="btn-lens-primary" id="exCalSave">Save</button>';
+      const moreBtn = document.getElementById("exCalMore");
+      if (moreBtn)
+        moreBtn.addEventListener("click", () => {
+          if (notesEl) notesEl.focus();
+        });
+      const saveBtn = document.getElementById("exCalSave");
+      if (saveBtn)
+        saveBtn.addEventListener("click", () => {
+          const payload = {
+            intent: calTab === "task" ? "task" : "event",
+            title: titleEl ? titleEl.value.trim() : "",
+            when: whenEl ? whenEl.value.trim() : "",
+            location: calTab === "task" ? "" : locEl ? locEl.value.trim() : "",
+            notes: notesEl ? notesEl.value.trim() : "",
+            guests: "",
+            meetingUrl: "",
+            remindMinutesBefore: 0,
+            extractedAt: new Date().toISOString(),
+          };
+          const url = buildGoogleCalendarUrl(payload);
+          closeLensExamineOverlay();
+          showToast("Added to calendar. View here", url);
+        });
+    }
+
+    function openLensExamineListSheet(text) {
+      const body = String(text || "").trim();
+      closeLensExamineOverlay();
+      applyExamineSelectionToAppState(body);
+      parsedTodoLines = parseTodoItems(body);
+      if (!parsedTodoLines.length && body) {
+        parsedTodoLines = body
+          .split(/\n/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .slice(0, 40);
+      }
+      if (lensExamineSheet) lensExamineSheet.classList.add("lens-examine-sheet--light");
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      lensExamineTitle.textContent = "Create list";
+      const wrap = document.createElement("div");
+      wrap.className = "lens-examine-list";
+      parsedTodoLines.forEach((line, i) => {
+        const row = document.createElement("div");
+        row.className = "lens-examine-list-row";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = true;
+        cb.id = "ex-li-" + i;
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.value = line;
+        inp.setAttribute("data-ex-li", String(i));
+        row.appendChild(cb);
+        row.appendChild(inp);
+        wrap.appendChild(row);
+      });
+      lensExamineScroll.innerHTML = "";
+      lensExamineScroll.appendChild(wrap);
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-secondary" id="exListCopy">Copy</button>' +
+        '<button type="button" class="btn-lens-primary" id="exListSave">Save to Notes</button>';
+      document.getElementById("exListCopy").addEventListener("click", () => {
+        const lines = [];
+        wrap.querySelectorAll(".lens-examine-list-row").forEach((row) => {
+          const inp = row.querySelector('input[type="text"]');
+          if (inp && inp.value.trim()) lines.push(inp.value.trim());
+        });
+        const out = lines.join("\n");
+        navigator.clipboard.writeText(out).then(
+          () => showToast("Text copied", null),
+          () => showToast("Copy blocked", null)
+        );
+      });
+      document.getElementById("exListSave").addEventListener("click", () => {
+        const items = [];
+        wrap.querySelectorAll(".lens-examine-list-row").forEach((row) => {
+          const cb = row.querySelector('input[type="checkbox"]');
+          const inp = row.querySelector('input[type="text"]');
+          if (inp && inp.value.trim()) items.push({ text: inp.value.trim(), done: cb ? cb.checked : true });
+        });
+        const payload = { intent: "todolist", items, sourceText: body, extractedAt: new Date().toISOString() };
+        try {
+          const arr = JSON.parse(localStorage.getItem("cameraLists") || "[]");
+          arr.push(payload);
+          localStorage.setItem("cameraLists", JSON.stringify(arr.slice(-40)));
+        } catch (e) {
+          console.warn(e);
+        }
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        closeLensExamineOverlay();
+        showToast("List saved on this device", url);
+      });
+    }
+
+    function openLensExamineNoteSheet(text) {
+      const body = String(text || "").trim();
+      closeLensExamineOverlay();
+      applyExamineSelectionToAppState(body);
+      if (lensExamineSheet) lensExamineSheet.classList.add("lens-examine-sheet--light");
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      lensExamineTitle.textContent = "Save note";
+      lensExamineScroll.innerHTML =
+        '<div class="lens-examine-field" style="margin-bottom:8px"><input type="text" id="exNoteTitle" placeholder="Title" /></div>' +
+        '<div class="lens-examine-field"><textarea id="exNoteBody" class="lens-examine-note-body" placeholder="Note"></textarea></div>';
+      const tEl = document.getElementById("exNoteTitle");
+      const bEl = document.getElementById("exNoteBody");
+      if (tEl) tEl.value = guessTitle(body).slice(0, 120);
+      if (bEl) bEl.value = body;
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-secondary" id="exNoteCopy">Copy</button>' +
+        '<button type="button" class="btn-lens-primary" id="exNoteSave">Save</button>';
+      document.getElementById("exNoteCopy").addEventListener("click", () => {
+        navigator.clipboard.writeText(body).then(
+          () => showToast("Text copied", null),
+          () => showToast("Copy blocked", null)
+        );
+      });
+      document.getElementById("exNoteSave").addEventListener("click", () => {
+        const payload = {
+          intent: "note",
+          title: tEl ? tEl.value.trim() : "",
+          body: bEl ? bEl.value.trim() : "",
+          extractedAt: new Date().toISOString(),
+        };
+        try {
+          const arr = JSON.parse(localStorage.getItem("cameraNotes") || "[]");
+          arr.push(payload);
+          localStorage.setItem("cameraNotes", JSON.stringify(arr.slice(-40)));
+        } catch (e) {
+          console.warn(e);
+        }
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        closeLensExamineOverlay();
+        showToast("Note saved on this device", url);
+      });
+    }
+
+    function openLensExamineShareSheet(text) {
+      const body = String(text || "").trim();
+      closeLensExamineOverlay();
+      if (lensExamineSheet) lensExamineSheet.classList.add("lens-examine-sheet--light");
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      lensExamineTitle.textContent = "Share text";
+      lensExamineScroll.innerHTML =
+        '<p class="lens-examine-muted">Extracted text</p><div id="exSharePreview" class="lens-examine-share-preview"></div>';
+      const prev = document.getElementById("exSharePreview");
+      if (prev) prev.textContent = body || "(Empty)";
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-secondary" id="exShareCopy">Copy</button>' +
+        '<button type="button" class="btn-lens-secondary" id="exShareNative">Share</button>' +
+        '<button type="button" class="btn-lens-primary" id="exShareDone">Done</button>';
+      document.getElementById("exShareCopy").addEventListener("click", () => {
+        navigator.clipboard.writeText(body).then(
+          () => showToast("Text copied", null),
+          () => showToast("Copy blocked", null)
+        );
+      });
+      const nat = document.getElementById("exShareNative");
+      if (nat) {
+        nat.style.display = typeof navigator !== "undefined" && navigator.share ? "inline-block" : "none";
+        nat.addEventListener("click", async () => {
+          try {
+            await navigator.share({ title: "Camera extract", text: body });
+            closeLensExamineOverlay();
+            showToast("Shared", null);
+          } catch (e) {
+            if (e && e.name !== "AbortError") console.warn(e);
+          }
+        });
+      }
+      document.getElementById("exShareDone").addEventListener("click", () => closeLensExamineOverlay());
+    }
+
+    function openLensExamineContactSheet(mode, text) {
+      const raw = String(text || "").trim();
+      closeLensExamineOverlay();
+      if (lensExamineSheet) lensExamineSheet.classList.add("lens-examine-sheet--light");
+      lensExamineOverlay.classList.add("is-open");
+      lensExamineOverlay.setAttribute("aria-hidden", "false");
+      if (mode === "email") {
+        const em = extractFirstEmailLens(raw);
+        lensExamineTitle.textContent = "Email";
+        lensExamineScroll.innerHTML = em
+          ? '<p class="lens-doc-preview__p" style="margin:0">' + escapeHtmlLens(em) + "</p>"
+          : '<p class="lens-examine-muted" style="margin:0">No email detected</p>';
+        lensExamineBar.innerHTML =
+          '<button type="button" class="btn-lens-secondary" id="exMailCopy">Copy</button>' +
+          '<button type="button" class="btn-lens-primary" id="exMailSend">Send email</button>';
+        document.getElementById("exMailCopy").addEventListener("click", () => {
+          if (!em) return;
+          navigator.clipboard.writeText(em).then(
+            () => showToast("Text copied", null),
+            () => showToast("Copy blocked", null)
+          );
+        });
+        document.getElementById("exMailSend").addEventListener("click", () => {
+          if (!em) return;
+          window.location.href = "mailto:" + em;
+          closeLensExamineOverlay();
+        });
+        return;
+      }
+      const digits = extractPhoneDigitsLens(raw);
+      lensExamineTitle.textContent = "Contact";
+      lensExamineScroll.innerHTML = digits
+        ? '<p class="lens-doc-preview__p" style="margin:0">Number: <strong>' +
+          escapeHtmlLens(digits) +
+          "</strong></p>"
+        : '<p class="lens-examine-muted" style="margin:0">No phone number detected</p>';
+      lensExamineBar.innerHTML =
+        '<button type="button" class="btn-lens-secondary" id="exPhCopy">Add to contacts</button>' +
+        '<button type="button" class="btn-lens-primary" id="exPhCall">Call</button>';
+      document.getElementById("exPhCopy").addEventListener("click", () => {
+        if (!raw) return;
+        navigator.clipboard.writeText(raw).then(
+          () => showToast("Text copied — paste into Contacts", null),
+          () => showToast("Copy blocked", null)
+        );
+      });
+      document.getElementById("exPhCall").addEventListener("click", () => {
+        if (!digits) return;
+        window.location.href = "tel:" + digits;
+        closeLensExamineOverlay();
+      });
+    }
+
+    function handleExamineLensAction(action, selectionText) {
+      const t = String(selectionText || "").trim();
+      if (action === "copy") {
+        if (!t) {
+          showToast("Nothing to copy", null);
+          return;
+        }
+        navigator.clipboard.writeText(t).then(
+          () => showToast("Text copied", null),
+          () => showToast("Copy blocked", null)
+        );
+        return;
+      }
+      lastText = t || lastText;
+      applyExamineSelectionToAppState(lastText);
+
+      if (action === "gdoc") {
+        openLensExamineDocPreview(t, "Convert to document");
+        return;
+      }
+      if (action === "event" || action === "reminder") {
+        openLensExamineCalendar("event", t);
+        return;
+      }
+      if (action === "task") {
+        openLensExamineCalendar("task", t);
+        return;
+      }
+      if (action === "todolist") {
+        openLensExamineListSheet(t);
+        return;
+      }
+      if (action === "note") {
+        openLensExamineNoteSheet(t);
+        return;
+      }
+      if (action === "share") {
+        openLensExamineShareSheet(t);
+        return;
+      }
+      if (action === "maps") {
+        if (!t) {
+          showToast("Nothing to save", null);
+          return;
+        }
+        lastMapsQuery = t;
+        const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(t);
+        showToast("Address saved. View in Maps", url);
+        return;
+      }
+      if (action === "call" || action === "contact") {
+        openLensExamineContactSheet("phone", t);
+        return;
+      }
+      if (action === "email") {
+        openLensExamineContactSheet("email", t);
+        return;
+      }
+      dismissExaminationUI();
+      openModal(action);
     }
 
     function buildPayload() {
@@ -3522,15 +6081,20 @@ Rules:
           logTextDetect("boot", {
             previewPollMs: PREVIEW_POLL_MS,
             previewOcr: "Tesseract.js continuous OCR on downscaled frames",
-            hintBubbleGating: "glyph/layout OCR || soft || structured || weakScene; hold " + TEXT_HINT_HOLD_MS + "ms after last positive",
+            hintBubbleGating:
+              "hint strip: preview OCR only when worker OK (else scene heuristics); show after " +
+              TEXT_HINT_SHOW_MIN_STREAK +
+              " consecutive positives; hold " +
+              TEXT_HINT_HOLD_MS +
+              "ms; examination auto-dismiss after same hold with no OCR text",
             ocrMaxWidth: OCR_PREVIEW_MAX_WIDTH,
             ocrLogHint: "Add ?ocrLog=1 for Tesseract worker progress logs",
             ocrTestHint: "Add ?ocrTest=1 for canvas + /test-ocr.png sanity checks",
             frameDebugHint: "Add ?frameDebug=1 to show OCR input canvas + luma on screen",
-            heuristicFallback: "Only if Tesseract fails to load",
+            heuristicFallback: "If Tesseract fails: luma+edge/variance only (no grid heuristics)",
             debounceShowMs: HINT_DEBOUNCE_SHOW_MS,
             debounceHideMs: HINT_DEBOUNCE_HIDE_MS,
-            gemini: "POST /analyze when user taps Examine text",
+            examineText: "On-device Tesseract OCR when user taps Examine text (no cloud / no LLM)",
           });
         }
         window.setInterval(() => {
@@ -3566,8 +6130,107 @@ Rules:
     });
 
     suggestDismissScrim.addEventListener("click", () => {
+      if (examinationUIActive) return;
       dismissExaminationUI();
     });
+
+    if (lensIntentStrip) {
+      lensIntentStrip.addEventListener("click", (e) => {
+        const pill = e.target.closest(".lens-intent-pill");
+        if (!pill) return;
+        e.stopPropagation();
+        const action = pill.getAttribute("data-action") || "copy";
+        const idxAttr = lensIntentStrip.getAttribute("data-lens-item-index");
+        const selIdx = idxAttr != null && idxAttr !== "" ? parseInt(idxAttr, 10) : NaN;
+        const examineStripMode = lensIntentStrip.getAttribute("data-lens-examine-mode");
+        let selectionText = lastText;
+        if (examinationUIActive && examineStripMode === "document") {
+          if (Number.isFinite(selIdx) && selIdx >= 0 && examineOcrElements[selIdx]) {
+            selectionText = examineOcrElements[selIdx].text;
+          } else {
+            selectionText = examineFullText || lastText;
+          }
+        } else if (
+          examinationUIActive &&
+          examineStripMode === "region" &&
+          Number.isFinite(selIdx) &&
+          selIdx >= 0 &&
+          examineOcrElements[selIdx]
+        ) {
+          selectionText = examineOcrElements[selIdx].text;
+        }
+
+        if (examinationUIActive) {
+          handleExamineLensAction(action, selectionText);
+          return;
+        }
+
+        if (action === "copy") {
+          const t = selectionText || "";
+          if (!t) {
+            showToast("Nothing to copy", null);
+            return;
+          }
+          navigator.clipboard.writeText(t).then(
+            () => {
+              showToast("Text copied", null);
+              dismissExaminationUI();
+            },
+            () => showToast("Copy blocked", null)
+          );
+          return;
+        }
+
+        if (action === "call") {
+          const raw = selectionText || "";
+          const digits = raw.replace(/\D/g, "");
+          if (digits.length < 10) {
+            showToast("No phone number found", null);
+            return;
+          }
+          window.location.href = "tel:" + digits;
+          dismissExaminationUI();
+          return;
+        }
+
+        if (action === "contact") {
+          const t = selectionText || "";
+          if (!t) {
+            showToast("Nothing to copy", null);
+            return;
+          }
+          navigator.clipboard.writeText(t).then(
+            () => {
+              showToast("Copied — paste into Contacts", null);
+              dismissExaminationUI();
+            },
+            () => showToast("Copy blocked", null)
+          );
+          return;
+        }
+
+        if (action === "maps") {
+          const q = (selectionText || "").trim();
+          if (!q) {
+            showToast("Nothing to open in Maps", null);
+            return;
+          }
+          lastMapsQuery = q;
+          const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+          window.open(url, "_blank", "noopener,noreferrer");
+          dismissExaminationUI();
+          return;
+        }
+
+        lastText = selectionText || lastText;
+        applyExamineSelectionToAppState(lastText);
+        dismissExaminationUI();
+        openModal(action);
+      });
+    }
+
+    if (btnLensExamineClose) btnLensExamineClose.addEventListener("click", () => closeLensExamineOverlay());
+    if (lensExamineBackdrop) lensExamineBackdrop.addEventListener("click", () => closeLensExamineOverlay());
 
     quickSuggestLayer.querySelectorAll("[data-quick]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
