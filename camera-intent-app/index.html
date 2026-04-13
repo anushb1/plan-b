@@ -656,7 +656,7 @@
       opacity: 0.92;
     }
 
-    /* —— Plan B (port 3001): hide pre-capture intent UI; Scene Assist uses post-capture sheet only —— */
+    /* —— Plan B (localhost:3001 or GitHub Pages /plan-b/): hide pre-capture intent UI; Scene Assist post-capture sheet —— */
     .app.plan-b .pixel-text-hint,
     .app.plan-b .quick-suggest-layer,
     .app.plan-b .suggest-dismiss-scrim,
@@ -3101,7 +3101,16 @@
     const sceneAssistCards = document.getElementById("sceneAssistCards");
     const btnSceneAssistRescan = document.getElementById("btnSceneAssistRescan");
 
-    const IS_PLAN_B = typeof location !== "undefined" && location.port === "3001";
+    /** Plan B: local dev on :3001, or GitHub Pages when path is /plan-b/ on *.github.io */
+    const IS_PLAN_B = (function () {
+      if (typeof location === "undefined") return false;
+      if (location.port === "3001") return true;
+      if (/\.github\.io$/i.test(location.hostname || "")) {
+        const p = location.pathname || "";
+        return /\/plan-b(\/|$|[?#])/i.test(p);
+      }
+      return false;
+    })();
     let sceneAssistCentered = false;
 
     function isLensExamineOverlayOpen() {
