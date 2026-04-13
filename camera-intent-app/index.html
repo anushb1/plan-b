@@ -667,6 +667,10 @@
       pointer-events: none !important;
     }
 
+    .app:not(.plan-b) .camera-modes .mode-item--plan-b-only {
+      display: none !important;
+    }
+
     .camera-modes.plan-b .mode-item.mode-item--disabled {
       opacity: 0.42;
       cursor: default;
@@ -731,6 +735,13 @@
       text-align: center;
       color: #fafafa;
       letter-spacing: 0.02em;
+    }
+
+    #sceneAssistCards {
+      max-height: min(44vh, 340px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
     }
 
     .scene-assist-card {
@@ -2822,6 +2833,15 @@
       <div class="camera-modes" id="cameraModes" role="tablist" aria-label="Camera modes">
         <button type="button" class="mode-item" role="tab" data-mode="action-pan" aria-selected="false">Action Pan</button>
         <button type="button" class="mode-item" role="tab" data-mode="long-exposure" aria-selected="false">Long Exposure</button>
+        <button
+          type="button"
+          class="mode-item mode-item--plan-b-only"
+          role="tab"
+          data-mode="scene-assist"
+          aria-selected="false"
+        >
+          Scene Assist
+        </button>
         <button type="button" class="mode-item" role="tab" data-mode="add-me" aria-selected="false">Add Me</button>
         <button type="button" class="mode-item" role="tab" data-mode="portrait" aria-selected="false">Portrait</button>
         <button type="button" class="mode-item active" role="tab" data-mode="photo" aria-selected="true" id="mode-photo">Photo</button>
@@ -3081,18 +3101,7 @@
     const sceneAssistCards = document.getElementById("sceneAssistCards");
     const btnSceneAssistRescan = document.getElementById("btnSceneAssistRescan");
 
-    /**
-     * Plan B / Scene Assist UX: on in this branch for
-     * - GitHub Pages: …/plan-b/…
-     * - local dev: any port on localhost (npm start = 3000 or start:plan-b = 3001)
-     */
-    const IS_PLAN_B = (function planBFromEnv() {
-      if (typeof location === "undefined") return false;
-      const host = location.hostname || "";
-      if (host === "localhost" || host === "127.0.0.1") return true;
-      if (location.port === "3001") return true;
-      return /(^|\/)plan-b(\/|$)/.test(location.pathname || "");
-    })();
+    const IS_PLAN_B = typeof location !== "undefined" && location.port === "3001";
     let sceneAssistCentered = false;
 
     function isLensExamineOverlayOpen() {
@@ -3378,12 +3387,23 @@
       lensIntentStrip.setAttribute("aria-hidden", "true");
     }
 
-    function showLensIntentStrip(intentLabels, maxCount, itemIndex, examineModeAttr) {
-      if (!lensIntentStrip) return;
+    /**
+     * Single source for Plan A pills and Plan B Scene Assist: same cap + fallback as legacy lens strip.
+     */
+    function finalizeExamineIntentLabelsForPlanA(intentLabels) {
       const src = intentLabels && intentLabels.length ? intentLabels : GENERIC_LENS_INTENTS;
       const cap =
-        typeof maxCount === "number" && maxCount > 0 ? maxCount : src.length > 2 ? 3 : 2;
-      const list = src.slice(0, cap);
+        typeof EXAMINE_INTENT_LABEL_CAP === "number" && EXAMINE_INTENT_LABEL_CAP > 0
+          ? EXAMINE_INTENT_LABEL_CAP
+          : src.length > 2
+            ? 3
+            : 2;
+      return src.slice(0, cap);
+    }
+
+    function showLensIntentStrip(intentLabels, itemIndex, examineModeAttr) {
+      if (!lensIntentStrip) return;
+      const list = finalizeExamineIntentLabelsForPlanA(intentLabels);
       lensIntentStrip.innerHTML = "";
       const frag = document.createDocumentFragment();
       for (const label of list) {
@@ -3412,7 +3432,6 @@
 
     /** --- Examine Text: on-device OCR (Tesseract), overlay, rule classifier, intent mapping --- */
     const EXAMINE_PHONE_RE = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/;
-    const EXAMINE_DATE_SLASH_RE = /\b\d{1,2}\/\d{1,2}\b/;
     const EXAMINE_DATE_ISO_RE = /\b\d{4}-\d{2}-\d{2}\b/;
     const EXAMINE_STREET_RE = /\b(St|Ave|Rd|Blvd)\b/i;
     const EXAMINE_LIST_GLYPH_RE =
@@ -3431,13 +3450,22 @@
     }
 
     /**
-     * True only when the text likely contains an actual calendar date/time — not English words like "may" (verb)
-     * or stray ratios. Used for "Add to calendar" visibility and classifyExamineText "date".
+     * True only when the text likely contains an actual calendar date/time — not English like "3 may be",
+     * or bare M/D pairs that look like ratios (e.g. 3/4). Used for "Add to calendar" and classifyExamineText "date".
      */
     function hasCalendarDateSignal(t) {
       const s = String(t || "");
       if (!s.trim()) return false;
-      if (EXAMINE_DATE_SLASH_RE.test(s) || EXAMINE_DATE_ISO_RE.test(s)) return true;
+      if (EXAMINE_DATE_ISO_RE.test(s)) return true;
+      if (/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(s)) return true;
+      const mdSlashHits = s.match(/\b(\d{1,2})\/(\d{1,2})\b/g);
+      if (mdSlashHits) {
+        for (const hit of mdSlashHits) {
+          const [a, b] = hit.split("/").map((x) => Number(x));
+          if (a <= 12 && b <= 12) continue;
+          return true;
+        }
+      }
       if (
         /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{2,4})?\b/i.test(
           s
@@ -3445,12 +3473,18 @@
       )
         return true;
       if (
-        /\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:\s+\d{2,4})?\b/i.test(
+        /\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:\s+\d{2,4})?\b/i.test(
           s
         )
       )
         return true;
-      if (/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i.test(s)) return true;
+      if (
+        /\b\d{1,2}(?:st|nd|rd|th)?\s+may(?!\s+(?:be|have|has|been|not|also|only|never|always|vary|include|need|result|seem|appear|still|even|contain|provide|relate|apply|cause|allow|differ|require|exist|work|prove|show|take|give|make|fit|remain|become|help|end|say|get|put|set|tell|call|come|go|see|try|read|add|act|mean|lead|wish|uses|used|depend|indicate|occur|represent|suggest|refer|meet|grow|fall|rise|last|sound|fail|pass|play|ask|send|sell|hold|bear|cost|keep|open|run|lie|cut|eat|sit|win|lose|pay|let)\b)(?:\s+\d{2,4})?\b/i.test(
+          s
+        )
+      )
+        return true;
+      if (/\b\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.?|p\.m\.?)\b/i.test(s)) return true;
       if (/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(s)) return true;
       return false;
     }
@@ -3458,9 +3492,33 @@
     function hasMapAddressSignal(t) {
       const s = String(t || "").trim();
       if (s.length < 8) return false;
+      const compact = s.replace(/\s+/g, " ");
       if (/\d/.test(s) && EXAMINE_STREET_RE.test(s) && s.length > 10) return true;
+      if (
+        /\b\d{3,5}\s+\d{1,2}(?:st|nd|rd|th)?\s*(?:ave|av\.?|avenue|street|st\.?|rd|road|blvd|dr|ln|way)\b/i.test(
+          compact
+        )
+      )
+        return true;
+      if (/\b[A-Z]{2}\s+\d{5}(-\d{4})?\b/.test(compact) && /[a-z]{2,}/i.test(s)) return true;
       if (/\b\d{5}(-\d{4})?\b/.test(s) && /[a-z]{2,}/i.test(s)) return true;
       if (/\b(?:location|address)\b/i.test(s) && /[a-z0-9]{4,}/i.test(s) && s.length > 18) return true;
+      return false;
+    }
+
+    /** Shipping labels / envelopes: commas, APT, ZIP, state+ZIP — should not classify as a todo list. */
+    function likelyMailingAddressBlock(t) {
+      const s = String(t || "").trim();
+      if (!s) return false;
+      const compact = s.replace(/\s+/g, " ");
+      if (hasMapAddressSignal(s)) return true;
+      if (/\b\d{5}(-\d{4})?\b/.test(compact)) return true;
+      if (/\b[A-Z]{2}\s+\d{5}(-\d{4})?\b/.test(compact)) return true;
+      if (
+        /\b(?:APT|APARTMENT|UNIT|STE|SUITE)\b/i.test(compact) &&
+        (/\b\d{5}/.test(compact) || EXAMINE_PHONE_RE.test(compact))
+      )
+        return true;
       return false;
     }
 
@@ -3565,11 +3623,25 @@
       return hits >= 2;
     }
 
+    function examineHasExplicitTodoListTitle(fullText) {
+      const lines = String(fullText || "")
+        .split(/\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      if (!lines.length) return false;
+      const L0 = lines[0];
+      if (/^(?:grocery|groceries|shopping|packing|todo)\s*list\b/i.test(L0)) return true;
+      if (/^.{0,52}(?:grocery|groceries|shopping|todo|packing)\s*list\b/i.test(L0)) return true;
+      if (/^(?:todo|tasks?|checklist)\b/i.test(L0) && L0.length < 48) return true;
+      return false;
+    }
+
     /** Grocery / handwritten checklist — multiple short lines or explicit list cues. */
     function looksLikeTodoListText(fullText, ocrRegionCount) {
       const t = String(fullText || "").trim();
       if (!t) return false;
       const lines = t.split(/\n/).map((l) => l.trim()).filter(Boolean);
+      if (likelyMailingAddressBlock(t) && !examineHasExplicitTodoListTitle(t)) return false;
       const lineBulletRe = /^\s*[-*•–—]+\s*\S|^\s*\d+[\.)]\s+\S/;
       const dashOrBulletItems = lines.filter((l) => lineBulletRe.test(l));
       if (dashOrBulletItems.length >= 2) return true;
@@ -3577,7 +3649,7 @@
       const lineStartBullets = (norm.match(/(?:^|\n)\s*[-*•–—]+\s*\S/gm) || []).length;
       if (lineStartBullets >= 2) return true;
       const spacedDashItems = (t.match(/\s[-*•–—]+\s+\S+/g) || []).length;
-      if (spacedDashItems >= 3) return true;
+      if (spacedDashItems >= 3 && !likelyMailingAddressBlock(t)) return true;
       if (spacedDashItems >= 2 && /\b(grocery|list|shopping|buy|eggs|milk|banana|apple|paper|toilet|broccoli)\b/i.test(t))
         return true;
       if (/\b(?:grocery|shopping)\s*list\b/i.test(t) && (spacedDashItems >= 1 || lineStartBullets >= 1 || lines.length >= 2))
@@ -3587,6 +3659,7 @@
         .map((s) => s.trim())
         .filter(Boolean);
       if (
+        !likelyMailingAddressBlock(t) &&
         dashSplit.length >= 4 &&
         dashSplit.every((s) => s.length <= 140) &&
         (/\b(?:grocery|groceries|shopping|todo|packing)\s*list\b/i.test(dashSplit[0]) || dashSplit.length >= 5)
@@ -3594,7 +3667,7 @@
         return true;
       if (lines.length < 2 && t.includes(",")) {
         const parts = t.split(",").map((x) => x.trim()).filter((x) => x.length > 1 && x.length < 48);
-        if (parts.length >= 4) return true;
+        if (parts.length >= 4 && !likelyMailingAddressBlock(t)) return true;
       }
       if (lines.length >= 2 && /^.{0,52}(grocery|groceries|shopping|todo|packing)\s*list\b/i.test(lines[0]))
         return true;
@@ -3604,7 +3677,11 @@
       if (detectListStructureHeuristic(t)) return true;
       if (classifyExamineListContent(t, lines)) return true;
       const short = lines.filter((l) => l.length >= 2 && l.length <= 56);
-      if (short.length >= 4 && short.length >= lines.length * 0.65) {
+      if (
+        !likelyMailingAddressBlock(t) &&
+        short.length >= 4 &&
+        short.length >= lines.length * 0.65
+      ) {
         const bulletish = lines.filter((l) =>
           /^(?:[\s\u00A0]*)(?:[-*•–—]|\d+[.)]|\[[ xX]\])/.test(l)
         ).length;
@@ -4021,6 +4098,80 @@
         : null;
     }
 
+    const EXAMINE_INTENT_LABEL_CAP = 6;
+    /** Plan B Scene Assist bottom sheet: same intent rules as Plan A, show top N only. */
+    const SCENE_ASSIST_SHEET_INTENT_CAP = 3;
+
+    /**
+     * Shared OCR string for Plan A (Examine) and Plan B (Scene Assist) so intent rules see the same text.
+     * Preserves newlines (list / multi-line address); prefers per-element lines when that adds structure.
+     */
+    function deriveExamineFullTextFromOcrPack(pack) {
+      const raw = pack && pack.data && pack.data.text ? String(pack.data.text) : "";
+      const elements = (pack && pack.elements) || [];
+      const preserveLines = (s) =>
+        String(s || "")
+          .replace(/\r\n/g, "\n")
+          .replace(/[^\S\n]+/g, " ")
+          .replace(/[ \t]*\n[ \t]*/g, "\n")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      const dataNorm = preserveLines(raw);
+      const elLines = elements.map((e) => preserveLines((e && e.text) || "")).filter(Boolean);
+      const elJoin = elLines.join("\n");
+      if (!dataNorm) return elJoin;
+      if (!elJoin) return dataNorm;
+      const nl = (s) => (s.match(/\n/g) || []).length;
+      const alnum = (s) => s.replace(/[^a-zA-Z0-9]/g, "").length;
+      if (elLines.length >= 2 && (nl(elJoin) > nl(dataNorm) || elLines.length >= 3)) return elJoin;
+      if (elLines.length >= 2 && alnum(elJoin) >= alnum(dataNorm) * 0.85) return elJoin;
+      return dataNorm;
+    }
+
+    /**
+     * Plan A + Plan B: same geometry + fullText derivation from a Tesseract pack (incl. receipt crop expand).
+     */
+    function applyExamineGeometryFromOcrPack(ocrPack) {
+      if (!ocrPack) return;
+      examineOcrImageW = ocrPack.imageW;
+      examineOcrImageH = ocrPack.imageH;
+      examineOcrElements = ocrPack.elements || [];
+      examineFullText = deriveExamineFullTextFromOcrPack(ocrPack);
+      examineDocumentBbox = ocrPack.documentBbox || null;
+      if (!examineDocumentBbox && examineOcrElements.length) {
+        const u = mergeExamineBboxesUnion(examineOcrElements);
+        if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
+      }
+      examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
+      if (!examineUserDocRect && examineOcrElements.length) {
+        examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
+      }
+      if (examineUserDocRect) {
+        examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
+        examineUserDocRect = expandLikelyReceiptCropRect(
+          examineUserDocRect,
+          examineOcrImageW,
+          examineOcrImageH,
+          examineFullText
+        );
+      }
+    }
+
+    /** Same minimum spinner duration + OCR call for Examine and Scene Assist (deterministic pairing). */
+    async function runExamineOcrWithMinimumSpinner(canvas) {
+      const minSpinnerMs = 200;
+      const t0 = performance.now();
+      const [ocrPack] = await Promise.all([
+        runTesseractExamineOnCanvas(canvas),
+        new Promise((r) => setTimeout(r, minSpinnerMs)),
+      ]);
+      const elapsed = performance.now() - t0;
+      if (elapsed < minSpinnerMs) {
+        await new Promise((r) => setTimeout(r, minSpinnerMs - elapsed));
+      }
+      return ocrPack;
+    }
+
     /** Fallback when OCR returns no string yet (Copy always; Save only if frame looks like a full document). */
     function examineMvpDefaultIntentLabels(ocrRegionCount) {
       const labels = ["Copy text"];
@@ -4029,33 +4180,39 @@
     }
 
     /**
-     * Plan A MVP: List-like pages → "Create list" first, then "Copy text". Calendar still first when
-     * strong date signal and not list-shaped. Otherwise map/contact after Copy. Save to file when structured doc.
+     * Plan A + Plan B: list → Create list + Copy + structured. Else calendar-first row when dated, else Copy then
+     * every applicable structured intent (map + contact), not a single exclusive primary — same OCR → same list.
      */
     function examineMvpDocumentIntentLabels(fullText, ocrRegionCount) {
       const t = String(fullText || "").trim();
       if (!t) return examineMvpDefaultIntentLabels(ocrRegionCount);
       const labels = [];
-      let primary = null;
-      if (hasCalendarDateSignal(t)) primary = "Add to calendar";
-      else if (hasMapAddressSignal(t)) primary = "View on map";
-      else if (
-        /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(t) ||
-        EXAMINE_PHONE_RE.test(t)
-      ) {
-        primary = "Add contact";
+      const hasCal = hasCalendarDateSignal(t);
+      const hasMap = hasMapAddressSignal(t);
+      const hasContact =
+        /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(t) || EXAMINE_PHONE_RE.test(t);
+      let wantList = looksLikeTodoListText(t, ocrRegionCount);
+      if (wantList && (hasMap || hasContact)) {
+        wantList = examineHasExplicitTodoListTitle(t);
       }
-      const wantList = looksLikeTodoListText(t, ocrRegionCount);
+
+      const pushStructuredAfterCopy = () => {
+        if (hasCal) labels.push("Add to calendar");
+        if (hasMap) labels.push("View on map");
+        if (hasContact) labels.push("Add contact");
+      };
 
       if (wantList) {
         labels.push("Create list", "Copy text");
-        if (primary === "Add to calendar") labels.push("Add to calendar");
-        else if (primary) labels.push(primary);
-      } else if (primary === "Add to calendar") {
+        pushStructuredAfterCopy();
+      } else if (hasCal) {
         labels.push("Add to calendar", "Copy text");
+        if (hasMap) labels.push("View on map");
+        if (hasContact) labels.push("Add contact");
       } else {
         labels.push("Copy text");
-        if (primary) labels.push(primary);
+        if (hasMap) labels.push("View on map");
+        if (hasContact) labels.push("Add contact");
       }
 
       if (looksLikeFullDocumentText(t, ocrRegionCount)) {
@@ -4067,33 +4224,6 @@
           labels.push("Save to file");
       }
       return labels;
-    }
-
-    /**
-     * Scene Assist sheet: merge rule-based intents with GENERIC_LENS_INTENTS so users always see
-     * multiple actions (e.g. calendar, list) when OCR alone only produced "Copy text".
-     */
-    function mergeSceneAssistIntentLabels(fullText, ocrRegionCount) {
-      const contextual = examineMvpDocumentIntentLabels(fullText, ocrRegionCount);
-      const out = [];
-      const seenAction = new Set();
-      function addFrom(label) {
-        const L = String(label || "").trim();
-        if (!L) return;
-        const action = mapLensIntentLabelToAction(L);
-        if (seenAction.has(action)) return;
-        seenAction.add(action);
-        out.push(L);
-      }
-      for (const l of contextual) {
-        addFrom(l);
-        if (out.length >= 3) return out;
-      }
-      for (const g of GENERIC_LENS_INTENTS) {
-        addFrom(g);
-        if (out.length >= 3) return out;
-      }
-      return out;
     }
 
     /** Debounced re-OCR after user adjusts the document frame (unused in Plan A MVP — drag/resize disabled). */
@@ -4157,13 +4287,7 @@
             height: e.bbox.height,
           },
         }));
-        let packText = (pack.data && pack.data.text ? String(pack.data.text) : "")
-          .replace(/\s+/g, " ")
-          .trim();
-        if (!packText && examineOcrElements.length) {
-          packText = examineOcrElements.map((e) => e.text).join("\n");
-        }
-        examineFullText = packText;
+        examineFullText = deriveExamineFullTextFromOcrPack(pack);
         applyExamineSelectionToAppState(examineFullText);
         lastAnalyzeImageResult = {
           texts: examineOcrElements.map((e) => ({
@@ -4189,7 +4313,11 @@
           structured: {},
         };
         renderExamineOverlays();
-        showLensIntentStrip(examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length), 5, null, "document");
+        showLensIntentStrip(
+          examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length),
+          null,
+          "document"
+        );
       } finally {
         examineRefreshInFlight = false;
       }
@@ -4251,7 +4379,11 @@
       examineMode = "document";
       examineSelectedIndex = -1;
       applyExamineSelectionToAppState(examineFullText);
-      showLensIntentStrip(examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length), 5, null, "document");
+      showLensIntentStrip(
+          examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length),
+          null,
+          "document"
+        );
       if (intentHint) {
         intentHint.textContent = "Choose an action below";
         intentHint.classList.remove("hidden");
@@ -4914,6 +5046,7 @@ Rules:
 
     function dismissExaminationUI(opts) {
       const keepLens = opts && opts.keepLensExamineOverlay;
+      const preserveOcr = opts && opts.preserveExamineOcrState;
       if (!keepLens) closeLensExamineOverlay();
       const appEl = document.getElementById("app");
       if (appEl) appEl.classList.remove("lens-examination");
@@ -4922,12 +5055,14 @@ Rules:
         window.clearTimeout(examineOcrRefreshTimer);
         examineOcrRefreshTimer = 0;
       }
-      examineOcrElements = [];
       examineSelectedIndex = -1;
       examineMode = "document";
-      examineFullText = "";
-      examineDocumentBbox = null;
-      examineUserDocRect = null;
+      if (!preserveOcr) {
+        examineOcrElements = [];
+        examineFullText = "";
+        examineDocumentBbox = null;
+        examineUserDocRect = null;
+      }
       if (textRegionLayer) textRegionLayer.classList.remove("is-region-mode", "is-region-reveal");
       clearLensIntentStrip();
       clearTextRegions();
@@ -5697,9 +5832,8 @@ Rules:
       showIntents(false);
 
       try {
-        await new Promise((r) => setTimeout(r, 280));
         if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2 || video.videoHeight < 2) {
-          console.warn("[CameraIntent/Frame] examine skip after delay — video still not ready");
+          console.warn("[CameraIntent/Frame] examine skip — video still not ready");
           showToast("Camera frame not available", null);
           return;
         }
@@ -5712,16 +5846,10 @@ Rules:
           videoReadyState: video.readyState,
           luma: exLuma,
         });
-        const minSpinnerMs = 200;
-        const t0 = performance.now();
         let ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
         let examineOcrTechnicalFailure = false;
         try {
-          const [pack] = await Promise.all([
-            runTesseractExamineOnCanvas(canvas),
-            new Promise((r) => setTimeout(r, minSpinnerMs)),
-          ]);
-          ocrPack = pack;
+          ocrPack = await runExamineOcrWithMinimumSpinner(canvas);
         } catch (err) {
           console.warn("[CameraIntent/Examine] OCR failed:", err);
           logTextDetect("examine_ocr_error", { message: err && err.message ? err.message : String(err) });
@@ -5729,39 +5857,8 @@ Rules:
           showToast(EXAMINE_TOAST_TECHNICAL, null);
           ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
         }
-        const elapsed = performance.now() - t0;
-        if (elapsed < minSpinnerMs) {
-          await new Promise((r) => setTimeout(r, minSpinnerMs - elapsed));
-        }
-
-        examineOcrImageW = ocrPack.imageW;
-        examineOcrImageH = ocrPack.imageH;
-        examineOcrElements = ocrPack.elements || [];
-        examineFullText = (ocrPack.data && ocrPack.data.text ? String(ocrPack.data.text) : "")
-          .replace(/\s+/g, " ")
-          .trim();
-        if (!examineFullText && examineOcrElements.length) {
-          examineFullText = examineOcrElements.map((e) => e.text).join("\n");
-        }
+        applyExamineGeometryFromOcrPack(ocrPack);
         const rawFull = examineFullText;
-        examineDocumentBbox = ocrPack.documentBbox || null;
-        if (!examineDocumentBbox && examineOcrElements.length) {
-          const u = mergeExamineBboxesUnion(examineOcrElements);
-          if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
-        }
-        examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
-        if (!examineUserDocRect && examineOcrElements.length) {
-          examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
-        }
-        if (examineUserDocRect) {
-          examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
-          examineUserDocRect = expandLikelyReceiptCropRect(
-            examineUserDocRect,
-            examineOcrImageW,
-            examineOcrImageH,
-            examineFullText
-          );
-        }
 
         lastAnalyzeImageResult = {
           texts: examineOcrElements.map((e) => ({
@@ -5813,7 +5910,11 @@ Rules:
               : "Pick an action below or try again";
             intentHint.classList.remove("hidden");
           }
-          showLensIntentStrip(examineMvpDocumentIntentLabels(rawFull, examineOcrElements.length), 5, null, "document");
+          showLensIntentStrip(
+            examineMvpDocumentIntentLabels(rawFull, examineOcrElements.length),
+            null,
+            "document"
+          );
         }
 
         logTextDetect("examine_ocr_ok", {
@@ -5887,8 +5988,7 @@ Rules:
 
     function openSceneAssistIntentSheet(intentLabels) {
       if (!sceneAssistBackdrop || !sceneAssistCards) return;
-      const src = intentLabels && intentLabels.length ? intentLabels : GENERIC_LENS_INTENTS;
-      const list = src.slice(0, 3);
+      const list = finalizeExamineIntentLabelsForPlanA(intentLabels).slice(0, SCENE_ASSIST_SHEET_INTENT_CAP);
       sceneAssistCards.innerHTML = "";
       const frag = document.createDocumentFragment();
       for (const rawLabel of list) {
@@ -5923,7 +6023,7 @@ Rules:
     }
 
     async function capturePhotoSceneAssist() {
-      dismissExaminationUI();
+      dismissExaminationUI({ preserveExamineOcrState: true });
       clearLensIntentStrip();
       setTextHintBarVisible(false);
       resetTextHintBubbleDebounce();
@@ -5942,41 +6042,24 @@ Rules:
 
       try {
         if (video.readyState < VIDEO_READYSTATE_MIN || video.videoWidth < 2) {
+          dismissExaminationUI();
           showToast("Camera not ready", null);
           return;
         }
         let ocrPack = { data: null, elements: [], imageW: canvas.width, imageH: canvas.height, documentBbox: null };
         try {
-          ocrPack = await runTesseractExamineOnCanvas(canvas);
+          ocrPack = await runExamineOcrWithMinimumSpinner(canvas);
         } catch (err) {
           console.warn("[SceneAssist] OCR failed:", err);
+          dismissExaminationUI();
           showToast("Could not read text in frame", null);
           return;
         }
-        examineOcrImageW = ocrPack.imageW;
-        examineOcrImageH = ocrPack.imageH;
-        examineOcrElements = ocrPack.elements || [];
-        examineFullText = (ocrPack.data && ocrPack.data.text ? String(ocrPack.data.text) : "")
-          .replace(/\s+/g, " ")
-          .trim();
-        if (!examineFullText && examineOcrElements.length) {
-          examineFullText = examineOcrElements.map((e) => e.text).join("\n");
-        }
+        applyExamineGeometryFromOcrPack(ocrPack);
         if (ocrNonWhitespaceLen(examineFullText) < 1) {
+          dismissExaminationUI();
           showToast("No text detected. Please try again", null);
           return;
-        }
-        examineDocumentBbox = ocrPack.documentBbox || null;
-        if (!examineDocumentBbox && examineOcrElements.length) {
-          const u = mergeExamineBboxesUnion(examineOcrElements);
-          if (u) examineDocumentBbox = padExamineBbox(u, examineOcrImageW, examineOcrImageH, 0.015);
-        }
-        examineUserDocRect = examineDocumentBbox ? { ...examineDocumentBbox } : null;
-        if (!examineUserDocRect && examineOcrElements.length) {
-          examineUserDocRect = { x: 0, y: 0, width: examineOcrImageW, height: examineOcrImageH };
-        }
-        if (examineUserDocRect) {
-          examineUserDocRect = clampExamineRectAboveShutter(examineUserDocRect, examineOcrImageW, examineOcrImageH);
         }
         applyExamineSelectionToAppState(examineFullText);
         lastAnalyzeImageResult = {
@@ -6002,8 +6085,8 @@ Rules:
           writingStyle: "unknown",
           structured: {},
         };
-        const labels = mergeSceneAssistIntentLabels(examineFullText, examineOcrElements.length);
-        openSceneAssistIntentSheet(labels.length ? labels : GENERIC_LENS_INTENTS.slice(0, 3));
+        const labels = examineMvpDocumentIntentLabels(examineFullText, examineOcrElements.length);
+        openSceneAssistIntentSheet(labels);
       } finally {
         analyzingBadge.classList.remove("show");
         btnShutter.disabled = false;
@@ -7430,18 +7513,6 @@ Rules:
 
       const wrap = document.getElementById("cameraModes");
       if (!wrap) return;
-
-      const le = wrap.querySelector('[data-mode="long-exposure"]');
-      if (le && !wrap.querySelector('[data-mode="scene-assist"]')) {
-        const sa = document.createElement("button");
-        sa.type = "button";
-        sa.className = "mode-item";
-        sa.setAttribute("role", "tab");
-        sa.setAttribute("data-mode", "scene-assist");
-        sa.setAttribute("aria-selected", "false");
-        sa.textContent = "Scene Assist";
-        le.insertAdjacentElement("afterend", sa);
-      }
 
       wrap.classList.add("plan-b");
       wrap.querySelectorAll(".mode-item").forEach((btn) => {
