@@ -1,12 +1,16 @@
 # Deploy static site to GitHub Pages: https://anushb1.github.io/plan-b/
 # Build: scripts/build-github-pages.sh (camera-intent-app + Tesseract vendor)
+#
+# Only `plan-b-mvp` triggers deploy. The github-pages environment often allows
+# selected branches only; if `plan-b` is not in that list, deployment fails.
+# To deploy from `plan-b` too: Repo → Settings → Environments → github-pages
+# → Deployment branches → add `plan-b`, then you can add it under `on.push` below.
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
       - plan-b-mvp
-      - plan-b
   workflow_dispatch:
 
 permissions:
